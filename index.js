@@ -1,5 +1,5 @@
 /**
- * Host half of `@local/dsh-hogwarts-loop`.
+ * Host half of `@dyikai/dsh-hogwarts-loop`.
  *
  * Registers two profile-wide capabilities:
  *
@@ -15,7 +15,7 @@
  * plugin read the current value at dispatch time instead of freezing it at
  * activation.
  *
- * @module @local/dsh-hogwarts-loop
+ * @module @dyikai/dsh-hogwarts-loop
  */
 
 import { readFileSync } from 'node:fs'

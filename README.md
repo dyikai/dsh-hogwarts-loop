@@ -49,7 +49,7 @@ hogwarts_dispatch({ role: "severus", description: "review checkpoint 3", prompt:
 
 **Settings（侧栏底部的设置入口） → 「霍格沃茨循环」**。这是主入口，注册在设置面板的 `settings.section`（order 60）。
 
-同一个表单还有第二个入口：**Plugins（侧栏） → Installed plugins → `@local/dsh-hogwarts-loop` → 行 `hogwarts-loop` → Configure**（`plugins.row.config`）。
+同一个表单还有第二个入口：**Plugins（侧栏） → Installed plugins → `@dyikai/dsh-hogwarts-loop` → 行 `hogwarts-loop` → Configure**（`plugins.row.config`）。
 
 页面会列出 6 个演员，每个角色一行：**`Provider` 和 `模型` 都是下拉框**，选项来自 Host 的模型目录（`remote.session.modelCatalog()`，按 provider 分组）；切换 Provider 会自动把模型切到该 provider 下的第一项。`推理强度` 也是下拉框，选项按所选模型实际支持的档位生成（留空＝模型默认）；`最大输出 token` 可填可空。下方还有 `派发设置`（子代理后端、派发深度上限）。改完点 **保存** —— 所有改动作为一个原子 `mutate` 写入当前 profile 的该条目，带版本栅栏；**下一次派发立即生效**，不需要重装、也不需要重启。
 
@@ -85,7 +85,7 @@ Voldemort 与 Harry **是完全相同的实现者**：同样的 checkpoint scope
 
 ### 为什么表单长这样
 
-- 表单同时注册到 **设置面板** 的 `settings.section` 和 **Plugins 页** 的 `plugins.row.config`（key = `@local/dsh-hogwarts-loop#hogwarts-loop`），两处渲染同一个 `FormBody`。
+- 表单同时注册到 **设置面板** 的 `settings.section` 和 **Plugins 页** 的 `plugins.row.config`（key = `@dyikai/dsh-hogwarts-loop#hogwarts-loop`），两处渲染同一个 `FormBody`。
 - 设置面板那条通过共享的 `settings.describe` 镜像找到本插件条目的命名空间（按 `hogwarts-loop` 后缀匹配，兼容 `include:` 前缀），再用 `ctx.configForms.get(ns)` 取到带版本栅栏的写入入口；Plugins 页那条由页面直接把已绑定的 `form` 传进来，所以完全不用猜命名空间。
 - Host 侧导出的 `Config` 把 `delegation` / `roles` 两个**顶层对象**标成 `.volatile()`（schemastery 不允许 volatile 嵌套，引用只能落在对象上）：这既是设置服务把该条目视为「可编辑」并服务于设置面板的前提，也让派发时读到的永远是**当前值**，而不是插件激活那一刻的快照。
 - 下拉框读不到模型目录时（例如登录态失效、目录请求失败），同一位置会退化成文本框，页面不会因此不可用。
@@ -98,12 +98,12 @@ Voldemort 与 Harry **是完全相同的实现者**：同样的 checkpoint scope
 plugin_manager -> { action: "install_bundle", target: "/Users/dyikai/Desktop/Projects/Personal/dsh-hogwarts" }
 
 # 卸载
-plugin_manager -> { action: "remove_bundle", target: "@local/dsh-hogwarts-loop" }
+plugin_manager -> { action: "remove_bundle", target: "@dyikai/dsh-hogwarts-loop" }
 ```
 
 安装后：
 
-- profile 的 `cordis.patch.yml` 会多一条 `- id: hogwarts-loop, name: '@local/dsh-hogwarts-loop'`；
+- profile 的 `cordis.patch.yml` 会多一条 `- id: hogwarts-loop, name: '@dyikai/dsh-hogwarts-loop'`；
 - 这个 package 以 **链接** 方式装进 profile，本目录里的改动会在下一次 Plugin Manager 操作 / profile 重组时生效；
 - **装了插件（或改了 `client.js`）之后需要重新加载一次页面**，浏览器才会加载客户端模块、设置项才会出现；Host 半边跟着行一起重组即可。
 
@@ -128,7 +128,7 @@ console.log(ev.find(e=>e.type==="request/header")?.data.header.config);
 
 ```
 .
-├── package.json              # @local/dsh-hogwarts-loop；dsh.bundle.patch + dsh.client
+├── package.json              # @dyikai/dsh-hogwarts-loop；dsh.bundle.patch + dsh.client
 ├── cordis.patch.yml          # 插入 hogwarts-loop 这一行
 ├── index.js                  # Host 半边：Config schema、skill 注册、hogwarts_dispatch
 ├── client.js                 # 浏览器半边：设置面板 + Plugins 页的按角色配置表单

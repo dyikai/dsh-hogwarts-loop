@@ -1,5 +1,5 @@
 {
-  "name": "@local/dsh-hogwarts-loop",
+  "name": "@dyikai/dsh-hogwarts-loop",
   "version": "1.0.0",
   "private": true,
   "description": "Hogwarts-loop as a profile plugin: registers the plan→build→review→commit skill, a per-role subagent dispatcher, and a Plugins-page form for configuring each cast member's model.",

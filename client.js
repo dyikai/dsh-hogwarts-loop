@@ -1,5 +1,5 @@
 /**
- * Browser half of `@local/dsh-hogwarts-loop`.
+ * Browser half of `@dyikai/dsh-hogwarts-loop`.
  *
  * Registers the plugin's configuration form in two places over the same body:
  *
@@ -16,7 +16,7 @@
  */
 
 window.__ModuleLoader__.load({
-  id: '@local/dsh-hogwarts-loop',
+  id: '@dyikai/dsh-hogwarts-loop',
   factory(require) {
     const React = require('react')
     const h = React.createElement
@@ -682,7 +682,7 @@ window.__ModuleLoader__.load({
           ctx.slots.register(
             {
               name: 'plugins.row.config',
-              key: '@local/dsh-hogwarts-loop#hogwarts-loop',
+              key: '@dyikai/dsh-hogwarts-loop#hogwarts-loop',
               locale: NS,
             },
             PluginsRowConfig,

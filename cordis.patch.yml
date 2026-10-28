@@ -5,5 +5,5 @@
 # default in `index.js`'s exported `Config`.
 - insert:
     - id: hogwarts-loop
-      name: '@local/dsh-hogwarts-loop'
+      name: '@dyikai/dsh-hogwarts-loop'
       config: {}
