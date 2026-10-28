@@ -1,8 +1,8 @@
 {
   "name": "@dyikai/dsh-hogwarts-loop",
   "version": "1.0.0",
-  "private": true,
-  "description": "Hogwarts-loop as a profile plugin: registers the plan→build→review→commit skill, a per-role subagent dispatcher, and a Plugins-page form for configuring each cast member's model.",
+  "description": "Hogwarts-loop as a DeepSeek Harness plugin: per-role subagent dispatch on configurable models, with a client settings page.",
+  "author": "dyikai",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -22,6 +22,25 @@
     "skill/assets/*.md",
     "README.md"
   ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "hogwarts-loop",
+    "subagent",
+    "agent-orchestration"
+  ],
+  "homepage": "https://github.com/dyikai/dsh-hogwarts-loop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dyikai/dsh-hogwarts-loop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dyikai/dsh-hogwarts-loop/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
