@@ -1,0 +1,9 @@
+# Hogwarts-loop bundle patch.
+#
+# The cast's per-role models live on this row's `config` (written by the client
+# config page, or by hand). An empty config is expected: every field has a
+# default in `index.js`'s exported `Config`.
+- insert:
+    - id: hogwarts-loop
+      name: '@local/dsh-hogwarts-loop'
+      config: {}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Hogwarts Loop",
+    "description": "Runs the plan → build → review → commit discipline with one subagent per cast role, each on its own configured model."
+  }
+}
