@@ -172,3 +172,7 @@ The plugin's runtime registration stays as the fallback source — it reads the 
 - `delegation.maxDepth` defaults to `1`: a child cannot dispatch further down.
 - Children join the parent session's current agent preset and use its tools.
 - The plugin is **profile-level**: install it once and every session sees `hogwarts_dispatch`; the project-level skill is only discovered while this project is the cwd.
+
+## License
+
+[MIT](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/LICENSE) © [dyikai](https://github.com/dyikai)

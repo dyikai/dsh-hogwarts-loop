@@ -172,3 +172,7 @@ Harness 的 skill 目录按 **层** 归并：同一层内 `project > runtime > u
 - `delegation.maxDepth` 默认 `1`：子代理不能再往下派发。
 - 子代理会加入父会话当前的 agent preset，沿用它那套工具。
 - 插件是 **profile 级** 的：装一次，所有会话都能看到 `hogwarts_dispatch`；但项目级 skill 只在本项目作为 cwd 时被发现。
+
+## 许可证
+
+[MIT](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/LICENSE) © [dyikai](https://github.com/dyikai)
