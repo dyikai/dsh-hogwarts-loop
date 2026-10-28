@@ -144,26 +144,11 @@ console.log(ev.find((e) => e.type === "request/header")?.data.header.config);
 ├── client.js                 # 浏览器半边：设置面板 + Plugins 页的按角色配置表单
 ├── locale/{en,zh}.json       # Plugin Manager 里显示的名称与说明
 ├── icon.svg                  # 插件图标
-├── skill/
-│   ├── SKILL.md              # 循环总览 + 「用 hogwarts_dispatch 派发」
-│   ├── references/*.md       # planner / implementer / reviewer / loop / example
-│   └── assets/plan-template.md
-└── .agents/skills/hogwarts-loop -> ../../skill   # 项目级 skill（优先级高于用户级）
+└── skill/
+    ├── SKILL.md              # 循环总览 + 「用 hogwarts_dispatch 派发」
+    ├── references/*.md       # planner / implementer / reviewer / loop / example
+    └── assets/plan-template.md
 ```
-
-### 为什么 `.agents/skills` 是个软链接
-
-Harness 的 skill 目录按 **层** 归并：同一层内 `project > runtime > user`，而**更近的层整条胜出**。用户级的 `~/.agents/skills/hogwarts-loop` 落在 preset 作用域那一层，优先级高于 Host 插件注册的全局 runtime skill。所以要让 `/hogwarts-loop` 真的指向本项目这份内容，必须把它暴露成 **项目级** skill：`.agents/skills/hogwarts-loop` 软链到 `skill/`，一份内容、两处可见。
-
-插件里的 runtime 注册保留作回退来源（读的是同一个 `skill/SKILL.md`）。
-
-> `.agents/` 常被全局 gitignore 忽略，所以本仓库**不带**这个软链接。克隆后重建一次即可：
->
-> ```bash
-> mkdir -p .agents/skills && ln -sfn ../../skill .agents/skills/hogwarts-loop
-> ```
->
-> 不建也能用：插件内置的 runtime 注册会兜底提供 `hogwarts-loop` 技能，只是少了项目层的优先级。
 
 ## 已知边界
 
@@ -171,7 +156,7 @@ Harness 的 skill 目录按 **层** 归并：同一层内 `project > runtime > u
 - `hogwarts_dispatch` 用 `spawn`（全新子代理）派发。`fork` 类后端为了复用 KV cache 会继承父会话的路由，**不能**换模型，所以本插件不支持 `fork`。
 - `delegation.maxDepth` 默认 `1`：子代理不能再往下派发。
 - 子代理会加入父会话当前的 agent preset，沿用它那套工具。
-- 插件是 **profile 级** 的：装一次，所有会话都能看到 `hogwarts_dispatch`；但项目级 skill 只在本项目作为 cwd 时被发现。
+- 插件是 **profile 级** 的：装一次，该 profile 下所有会话都能看到 `hogwarts_dispatch` 和 `hogwarts-loop` 技能。
 
 ## 许可证
 

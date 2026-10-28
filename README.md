@@ -144,26 +144,11 @@ Expect `agentModel` / `config.model` to equal that role's configured model.
 ├── client.js                 # browser half: per-role config form in Settings and on the Plugins page
 ├── locale/{en,zh}.json       # plugin name and description in the Plugin Manager
 ├── icon.svg                  # plugin icon
-├── skill/
-│   ├── SKILL.md              # the loop overview + "dispatch with hogwarts_dispatch"
-│   ├── references/*.md       # planner / implementer / reviewer / loop / example
-│   └── assets/plan-template.md
-└── .agents/skills/hogwarts-loop -> ../../skill   # project-level skill (takes precedence over user-level)
+└── skill/
+    ├── SKILL.md              # the loop overview + "dispatch with hogwarts_dispatch"
+    ├── references/*.md       # planner / implementer / reviewer / loop / example
+    └── assets/plan-template.md
 ```
-
-### Why `.agents/skills` is a symlink
-
-The harness merges skill directories by **layer**: within a layer the order is `project > runtime > user`, and a **nearer layer wins outright**. The user-level `~/.agents/skills/hogwarts-loop` sits in the preset scope layer, which outranks the global runtime skill registered by the host plugin. For `/hogwarts-loop` to really point at this project's content, it has to be exposed as a **project-level** skill: `.agents/skills/hogwarts-loop` symlinks to `skill/`, one body of content visible in two places.
-
-The plugin's runtime registration stays as the fallback source — it reads the same `skill/SKILL.md`.
-
-> `.agents/` is usually ignored by a global gitignore, so this repository **does not** ship the symlink. Recreate it once after cloning:
->
-> ```bash
-> mkdir -p .agents/skills && ln -sfn ../../skill .agents/skills/hogwarts-loop
-> ```
->
-> It also works without it: the plugin's built-in runtime registration provides the `hogwarts-loop` skill as a fallback, you just lose the project-level precedence.
 
 ## Known limits
 
@@ -171,7 +156,7 @@ The plugin's runtime registration stays as the fallback source — it reads the 
 - `hogwarts_dispatch` dispatches with `spawn` (a fresh subagent). `fork`-style backends inherit the parent session's route to reuse the KV cache and therefore **cannot** retarget the model, so this plugin does not support `fork`.
 - `delegation.maxDepth` defaults to `1`: a child cannot dispatch further down.
 - Children join the parent session's current agent preset and use its tools.
-- The plugin is **profile-level**: install it once and every session sees `hogwarts_dispatch`; the project-level skill is only discovered while this project is the cwd.
+- The plugin is **profile-level**: install it once and every session in this profile sees `hogwarts_dispatch` and the `hogwarts-loop` skill.
 
 ## License
 
