@@ -744,6 +744,52 @@ test('legacy children without a tool result are identified by their first person
   assert.equal(subagents.sendCalls.length, 1)
 })
 
+/* Frozen v1 first-brief prefixes, copied literally from the release before the
+ * review-contract persona update. Do not build these from DEFAULT_ROLES: the
+ * point is to prove an already-persisted child from the previous version is
+ * still identified after the persona text changed. */
+const PRE_UPDATE_PERSONAS = {
+  harry: `You are Harry, the implementer of the Hogwarts loop. You build exactly one checkpoint to spec, run every gate the checkpoint calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. You report every deviation from the plan, you stay inside the checkpoint scope, and you never commit.`,
+  severus: `You are Severus, the independent reviewer of the Hogwarts loop. You verify the checkpoint against the spec and re-derive it from the source of truth rather than trusting the implementer's summary. Review time is read time: no builds, no test runs, no compiles. You probe adversarially by reading and reasoning, and when a suspicion can only be settled by execution you return a prove-or-refute request instead of running it yourself. You rule — APPROVE or REQUEST-CHANGES with P1/P2/P3 findings — and you never edit code.`,
+  alastor: `You are Alastor, the security specialist of the reviewer bench. You audit the checkpoint for security and privacy defects — trust boundaries, injection, secrets, authorization, unsafe defaults, data exposure — and you rule only on what you can substantiate by reading. You never edit code.`,
+  voldemort: `You are Voldemort, the escalation implementer of the Hogwarts loop. You work exactly as Harry does — you build one change to spec, run every gate it calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. Two things differ: you run on the stronger model configured for this seat, and you are woken for ONE specific problem the implementer already failed three times — never to take over his remaining work. Your brief names that problem; you fix that problem and nothing else, you do not pick up other checkpoints, you do not "clean up while you are here", and when the problem is resolved and reviewed you stop and hand control back. You report every deviation, you stay inside the escalated scope, and you never commit.`,
+}
+
+for (const [role, frozenPrompt] of Object.entries(PRE_UPDATE_PERSONAS)) {
+  test(`legacy ${role} with a literal pre-update first prompt is still identified`, async () => {
+    assert.notEqual(
+      DEFAULT_ROLES[role].persona,
+      frozenPrompt,
+      `the ${role} persona changed, so this test must exercise the legacy identity path`,
+    )
+    const parent = new FakeSession(`parent-frozen-${role}`)
+    const childId = `frozen-${role}`
+    parent.catalog(childId, { label: 'old assignment' })
+    const { ctx, subagents, sessionQuery } = makeCtx()
+    sessionQuery.add(childId, {
+      events: [
+        {
+          type: 'user/message',
+          seq: 0,
+          time: 0,
+          data: {
+            content: [{ type: 'text', text: composePrompt(frozenPrompt, 'old brief') }],
+          },
+        },
+      ],
+    })
+
+    const result = await createDispatcher(ctx, makeConfig()).execute(
+      { role, prompt: 'next brief' },
+      makeExec(parent),
+    )
+    assert.equal(result.action, 'continued')
+    assert.equal(result.childId, childId)
+    assert.equal(subagents.startCalls.length, 0)
+    assert.equal(subagents.sendCalls.length, 1)
+  })
+}
+
 test('a fork ignores inherited catalog and result facts and starts its own cast', async () => {
   const inheritedCall = {
     type: 'tool/call',

@@ -12,7 +12,7 @@ loosely-run loop leaks.
 ```
                           ┌──────────── PLAN — Albus (once) ────────────┐
                           │ read source of truth → decompose into       │
-                          │ checkpoints → write living plan doc →        │
+                          │ checkpoints → write working plan →        │
                           │ define each checkpoint's gate                │
                           └──────────────────────┬──────────────────────┘
                                                  │
@@ -39,8 +39,9 @@ loosely-run loop leaks.
         │     │        └──────[F: fix report]─────────────────┘                     │
         │     │        └──────▶ back to [C] (Severus re-reviews)                       │
         │     │                                                                      │
-        │     └── APPROVE ──▶ orchestrator commits (code + plan update) +            │
-        │                     folds P3s/memos forward + advances to next CP          │
+        │     └── APPROVE ──▶ orchestrator commits code/tests (durable docs    │
+        │                     only if approved) + folds P3s/memos forward       │
+        │                     + advances to next CP                             │
         └────────────────────────────────────────────────────────────────────────────┘
                                                  │
                           ┌──────────────────────┴──────────────────────┐
@@ -51,10 +52,21 @@ loosely-run loop leaks.
                           └──────────────────────────────────────────────┘
 ```
 
-A checkpoint exits (edge → APPROVE) only when Severus approves **and** the full
-gate is green on the exact state being committed (see Gate economy below).
+A checkpoint exits (edge → APPROVE) only when Severus approves, the approval gate
+in `review-contract.md` is satisfied, **and** the full gate is green on the exact
+state being committed (see Gate economy below).
 Before review, every delivery must also satisfy the conditional complexity and
 ablation gate in `ablation.md`; missing required experiments are not review-ready.
+
+Two review-governance rules sit between the letters in the diagram. First,
+between **D** and **E**, Albus batch-validates every blocking P1/P2 candidate and
+every security candidate (confirm/refute/needs-evidence) before relaying a repair
+order; one batch, not one agent per finding (`review-contract.md`). Second, after
+**three completed review/response cycles** with blocking findings unresolved the
+checkpoint stops automatic iteration; Albus records an explicit reassessment
+decision with preserved counters. That checkpoint-wide cap is separate from the
+same-root Harry/Voldemort attempt limits in `SKILL.md`; neither limit resets the
+other.
 
 ## The handoff payloads
 
@@ -78,6 +90,11 @@ Full template in `implementer.md`.
 - Files changed / added.
 - Complexity measurements and trigger ruling; when triggered, experiment artifacts,
   keep/revert decisions and combined-survivor evidence (`ablation.md`).
+- Opening cycle count and, if any earlier round on this checkpoint ran, the
+  current convergence-cap state (preserved, never reset).
+- Lightweight feedback fields when known: findings by severity/evidence status,
+  escaped defects, and measured time/token cost — "unavailable" if not measured
+  (`evaluation.md`).
 - Self-flagged risk spots ("review this hardest").
 - Temporary-artifact inventory: exact paths owned by this run, for Albus's cleanup.
 - Confirmation: not committed, stayed in scope.
@@ -88,6 +105,10 @@ Full template in `implementer.md`.
 - How to see the diff + the baseline commit (only the unpassed changes).
 - Spec sections to check against.
 - Harry's declared deviation list (for rulings) and complexity/ablation evidence.
+- The current review/response cycle number against the convergence cap, and any
+  reassessment decision in force.
+- Named sensitive surfaces for the security triage, plus the plan's risk/approval
+  and rollback fields (`review-contract.md`, `reviewer.md`).
 - Focus areas, highest-risk-first.
 Full template in `reviewer.md`.
 
@@ -100,30 +121,73 @@ settled and reported alongside.
 - What he already ruled on, so the panel does not redo it.
 The orchestrator approves, trims for budget, and adds any lens the diff cannot
 reveal (plan-derived constraints) plus — where the verdict rests on Severus's
-own reading — a lens pointed at that reading. Then the panel runs and returns D.
+own reading — a **claim refuter** aimed at that conclusion. Then the panel runs
+and returns D. A claim refuter is a bounded challenge to one conclusion, not a
+coverage re-run (`reviewer.md`).
 
 ### D — Severus → orchestrator: *review report*
 - Verdict: APPROVE or REQUEST-CHANGES.
-- Findings, each [P1 / P2 / P3] + file:line + concrete failure scenario +
-  suggested fix.
+- Findings, each with a stable ID, [P1 / P2 / P3] severity, evidence status
+  (`candidate` / `confirmed` / `refuted` / `needs-evidence`), disposition,
+  provenance, source snapshot, file:line, concrete failure scenario, the guard
+  checked, and a suggested fix.
 - A ruling on each declared deviation (accept/reject + reason).
 - Gate verification results (ran / audited) — and, honestly, what was only
-  static-analyzed.
+  static-analyzed, plus the prove-or-refute requests handed to Harry.
+- Security triage result (named sensitive surfaces, or "none") and the current
+  review/response cycle number.
 - On APPROVE: downstream memos for later checkpoints.
 
+### D→E — orchestrator: *batch validation* (mandatory before relay)
+- One batch validation of every blocking P1/P2 candidate and every security
+  candidate, by Albus or another reviewer who did not originate it. Never one
+  agent per finding.
+- Per finding: confirmed / refuted / needs-evidence. A complete deterministic
+  code/data-flow chain re-derived by the validator with the guard checked
+  confirms statically; no execution is required just because the finding is in
+  code.
+- If execution is truly required, `needs-evidence` names an owner, the next
+  evidence step, and the explicit blocking/risk route. E may authorize
+  **evidence collection only**, not repair. Harry returns the unchanged pre-fix
+  red test on the reviewed snapshot with raw output + pre-fix stamp; the
+  non-origin validator checks the oracle/entrypoint and confirms or refutes.
+  This bounded handoff is not a second full review and not a repair, but the
+  **pre-fix evidence report consumes one review/response cycle** exactly like a
+  fix, and the later repair response consumes another. Batch evidence requests
+  for all candidates into that one report; informational progress/tool logs do
+  not each count. Three unresolved evidence-only responses with no code change
+  reach the same stop/reassess rule — there is no evidence-only exemption.
+- A zero-confirmed P1/P2 report with open required verification is still
+  blocked.
+- The batch result is recorded in the plan's review ledger. Only confirmed
+  blocking findings and open evidence routes move to edge E.
+
 ### E — orchestrator → Harry: *findings relay*
-- The P1/P2 findings to fix (P3s are recorded, not blocking).
+- The confirmed P1/P2 findings to fix (P3s are recorded, not blocking), each by
+  stable ID with the record and proposed evidence.
+- Confirmed `refuted` findings are closed, not repaired.
+- Any `needs-evidence` item with its owner, next step, and blocking/risk route —
+  evidence collection only until the non-origin validator confirms it.
 - Which deviations were rejected and must change.
-- Any orchestrator decision on contested points.
+- Any orchestrator decision on contested points, and the convergence-cap state
+  when the reassessment decision applies.
 
 ### F — Harry → orchestrator: *fix report*
-- Per-finding: what the fix was.
+- Per-finding, by stable ID: what the fix was and a **proposed** disposition —
+  not a self-closed one; independent re-review closes it.
+- For a repro-route finding: the unchanged test's pre-fix red evidence (raw
+  output + pre-fix stamp) was returned for confirmation **before repair**, and
+  the post-fix green evidence (raw output + fixed stamp) is returned here. For a
+  static-route finding: fixed-state source and gate evidence; no test is
+  required solely because the finding was in code.
+- The new tests added to lock each bug against recurrence.
 - Reran the gate per the gate economy (cheap mode: the whole gate, not just the
   touched module; expensive mode: the fast gate — the one final full gate lands
   before commit).
-- New tests added to lock each bug against recurrence.
 - Incremental complexity since the last validated ablation (or checkpoint start);
   any newly triggered experiments and their final-survivor evidence.
+- Any `needs-evidence` item that remains open, with the next step — never
+  reported as passed; and the updated cycle count.
 Then loop back to edge C for Severus's re-review.
 
 ## Transport — how the edges physically run
@@ -183,9 +247,12 @@ a tree-state stamp that matches the diff under review, and scope honesty
 by compiling anything: review time is read time, and reviewers get no build
 permissions, no worktrees to compile in, no simulators. A suspicion that only
 execution can settle goes back to Harry as a prove-or-refute request; he has
-the build, he writes the failing test. The single exception is Argus, who
-launches the artifact Harry's final full gate already produced — he never
-rebuilds either.
+the build, he writes the pre-fix repro, returns the unchanged red evidence for
+non-origin confirmation, and fixes only after the confirmed finding is relayed.
+The single exception is Argus, who launches the artifact Harry's final full gate
+already produced — he never rebuilds either. The batch validation between D and E is also read-only: the
+validator inspects chains, oracles, entrypoints and stamps, and Harry still
+executes anything that must run.
 
 Two tiers govern *when Harry runs what*, defined per checkpoint at Plan time:
 
@@ -226,9 +293,10 @@ through.
 ## Review economy — buy the second pair of eyes where it can see something
 
 Gate economy above governs what *verification* costs. Review has its own cost curve,
-and it is the one that actually blows up: a fan-out panel with per-finding
-refutation is one to three orders of magnitude more expensive than a single
-reviewer. Left unmanaged it dwarfs the implementation it is reviewing.
+and it is the one that actually blows up: a fan-out panel plus a separate
+refutation agent per finding is one to three orders of magnitude more expensive
+than a single reviewer. Left unmanaged it dwarfs the implementation it is
+reviewing.
 
 **The invariant worth paying for is not "more eyes on every checkpoint." It is
 "eyes on the surface the default reviewer's sweep will not cover."** Those are
@@ -269,6 +337,20 @@ correctness is triple cost for near-zero added coverage; one agent asking "what
 did this swap silently discard?" is a different question and finds different
 bugs.
 
+**Coverage and refutation are different jobs.** A coverage specialist is named
+for an uncovered boundary and owns that surface. A claim refuter is a bounded
+challenge to one load-bearing conclusion and may read the same surface without
+duplicating the review. Neither is the validation batch: that is one read-only
+pass over all blocking candidates between D and E, done by one non-origin
+validator (`review-contract.md`), not a panel.
+
+**Bound total churn as well as panel size.** Even a correctly sized sequence of
+rounds can stop converging. The checkpoint-wide cap — three completed
+review/response cycles, then an explicit reassessment with preserved counters —
+is the backstop (`review-contract.md`). Hitting it is not permission to dispatch
+a bigger panel or an escalation; escalation still needs same-root failure
+evidence.
+
 **Budget the loss when a fan-out dies.** A phase whose agents all fail together
 (rate limit, API error) usually caches nothing — the whole spend is gone.
 On a long run, prefer several smaller convenings over one giant one, and treat a
@@ -288,10 +370,10 @@ silently re-runs the previous one at full price and the loop's cost stops
 tracking how much new surface there is. (What makes a re-review cheap or
 expensive is novelty, not line count — `reviewer.md`, Re-review.)
 
-## The plan doc is working memory, not an archive
+## The working plan is memory, not an archive
 
-The rule above — if it isn't in the plan doc, it's lost — creates a pressure the
-orchestrator has to actively counterbalance. Every review round adds findings,
+The rule above — if it isn't in the working plan, it's lost — creates a pressure
+the orchestrator has to actively counterbalance. Every review round adds findings,
 rulings, corrections, and memos; nothing removes them. A persistent implementer
 re-reads that document every round, so an unpruned plan quietly becomes the
 largest recurring cost in the run, and the signal in it thins out as it grows.
@@ -308,13 +390,48 @@ Two habits keep it useful:
   must honor — and never says "read the plan." The document is a reference the
   roles index into, not a preamble they recite each round.
 
+### Storage, retention, and commits
+
+The working plan is **coordination state, not automatically a Git deliverable**.
+Its storage is an explicit plan-time decision (`assets/plan-template.md`):
+
+- **Default: session memory or one task-scoped temporary root outside the
+  workspace.** Temporary execution plans, progress lists, and review reports are
+  scratch artifacts under the cleanup policy below. Do not commit them by
+  default, and do not hide them behind new `.gitignore` rules.
+- **Durable exception: a user-approved maintained roadmap/design document.** It
+  may live in the repository and be updated with checkpoint status because the
+  user explicitly chose it as durable. That approval also decides who commits it
+  and when; it does not make every other plan/progress/review file durable.
+- **Commits are code/tests by default.** Actual rules, templates, code, and tests
+  are deliverables and do belong in Git; a checkpoint commit does not have to
+  carry a plan update. When the durable exception exists, its update follows the
+  approved document's own retention/lifecycle decision.
+- The memory rule still applies to the chosen storage: if a constraint is not
+  recorded where the roles will read it, it is lost. "Not in Git" does not mean
+  "not written down."
+
 ## What the orchestrator does at each verdict
 
-- **REQUEST-CHANGES:** relay the P1/P2 findings (edge E) → Harry fixes (edge F) →
-  Severus re-reviews (edge C). Never advance with an open P1/P2.
-- **APPROVE:** Albus completes temporary-artifact cleanup below, then commits the
-  checkpoint as one traceable unit (code **and** plan update). Stamp it ✅ with
-  date + commit hash, then fold forward. Do not hand cleanup back to the user.
+- **REQUEST-CHANGES:** batch-validate the blocking candidates (D→E above); relay
+  the confirmed P1/P2 findings and open evidence routes (edge E) → Harry fixes
+  (edge F) → Severus re-reviews (edge C). Never advance with an open confirmed
+  P1/P2, an unresolved blocking `needs-evidence`, or a required human approval
+  replaced by consensus.
+- **Before another automatic cycle:** update the cycle counter. At three completed
+  review/response cycles without resolution, stop and record the explicit
+  reassessment decision (approach/scope/reviewer churn; bounded authorization or
+  stop) — do not start a fourth automatic cycle. New serious findings are still
+  triaged and routed, never dropped to hit the cap.
+- **APPROVE:** confirm the approval gate (`review-contract.md`) is satisfied —
+  every candidate accounted for, gate green on the exact state, deviations ruled,
+  P2 waivers attributed, no unresolved required verification. Albus completes
+  temporary-artifact cleanup below, records the lightweight feedback entry, then
+  commits the checkpoint's code/tests as one traceable unit. A working plan or
+  review report is not part of that commit unless the user approved it as a
+  durable roadmap/design document. Update the working plan in its chosen storage
+  (session/temp by default), stamp the durable doc if one exists ✅ with date +
+  commit hash, then fold forward. Do not hand cleanup back to the user.
 
 ## Temporary artifacts — Albus owns cleanup
 
@@ -323,9 +440,11 @@ default. Use session/tool output when sufficient. When files are needed, choose
 one task-scoped temporary root outside the workspace, within allowed filesystem
 permissions, and pass its location to the workers. Track the exact paths this run
 creates; Harry includes that inventory in his delivery. Raw logs, experiment
-patches, snapshots, scratch scripts and per-run review reports are temporary,
-not deliverables. Do not hide them behind new ignore rules or commit them by
-default. Explicit user-requested artifacts are the exception.
+patches, snapshots, scratch scripts, per-run review reports, progress lists, and
+temporary execution plans are **not committed by default**; they are not
+deliverables. Do not hide them behind new ignore rules either. A user-approved
+maintained roadmap/design document is the durable exception; explicit
+user-requested artifacts are the other.
 
 After Severus's final approval, and before committing, advancing or sending the
 final response, **Albus** must:
@@ -334,8 +453,8 @@ final response, **Albus** must:
    REQUEST-CHANGES, retain only evidence still needed for repair/re-review,
    outside the workspace; remove superseded scratch work.
 2. Preserve a concise result, verification outcome and necessary carry-forward
-   decisions in the existing plan, conversation or PR—not a new audit bundle.
-   Keep source, regression tests and agreed deliverables.
+   decisions in the existing working plan, conversation or PR—not a new audit
+   bundle. Keep source, regression tests and agreed deliverables.
 3. Verify resolved absolute targets and ownership, then remove this run's
    temporary files, including any workspace leftovers and its temporary root.
    Never infer ownership from a filename or untracked status; never use blanket
@@ -355,23 +474,25 @@ is Albus's closeout gate, not an optional suggestion for the user.
 
 Two things must persist across checkpoint boundaries or the loop leaks knowledge:
 
-- **Deviation registry** (in the plan doc). Every accepted deviation, with ID,
-  reason, and scope. This is the honest record of "what we built vs. what the doc
-  said," and it's what you reconcile into the spec/contract at closeout.
-- **Carry-forward memos** (in the plan doc, written into the *target* checkpoint's
-  section). When Severus's APPROVE report (edge D) contains a downstream memo — a
-  constraint the next stage must honor, a limitation to work around, a test the
-  finale must add — the orchestrator writes it *now* into that future
-  checkpoint's brief-to-be. A reviewer who has read the whole run will often
-  predict a hazard several checkpoints early; capture the prediction or you'll
-  rediscover it the hard way.
+- **Deviation registry** (in the working plan, wherever it is stored). Every
+  accepted deviation, with ID, reason, and scope. This is the honest record of
+  "what we built vs. what the doc said," and it's what you reconcile into the
+  spec/contract at closeout. A durable roadmap/design doc is the exception where
+  this may live in Git; by default it is session/task-scoped state.
+- **Carry-forward memos** (in the working plan, written into the *target*
+  checkpoint's section). When Severus's APPROVE report (edge D) contains a
+  downstream memo — a constraint the next stage must honor, a limitation to work
+  around, a test the finale must add — the orchestrator writes it *now* into that
+  future checkpoint's brief-to-be. A reviewer who has read the whole run will
+  often predict a hazard several checkpoints early; capture the prediction or
+  you'll rediscover it the hard way.
 
-If it isn't written into the plan doc, it didn't happen. The living doc is the
-loop's memory between stages.
+If it isn't written into the working plan, it didn't happen. That plan is the
+loop's memory between stages, not a default repository file.
 
 ## Closeout (after the last checkpoint)
 
-- **Argus's UI walkthrough first** — only if the plan doc carries Figma links
+- **Argus's UI walkthrough first** — only if the working plan carries Figma links
   (recorded by Albus at Plan time; no links = skip, and UI verification routes
   to manual acceptance). Argus launches the app Harry's final full gate already
   built and walks the milestone's flows in the simulator against the Figma
@@ -410,12 +531,33 @@ loop's memory between stages.
   not to discover the build is broken — bounce red deliveries at edge B.
 - **Advancing with open P1/P2.** The whole point is not shipping the known bug.
 - **Faking verification you couldn't run.** State the boundary; route to manual.
-- **Losing a memo between checkpoints.** If it's not in the plan doc, it's gone.
+- **Losing a memo between checkpoints.** If it's not in the working plan, it's
+  gone — regardless of whether that plan lives in session memory, a temp root, or
+  an approved durable doc.
 - **Checkpoints too big to review deeply.** If Severus can't hold it in his head,
   split finer.
 - **Uniform review intensity.** Convening the same panel every checkpoint because
   the milestone matters. Size to the diff's unswept surface (Review economy above)
   — otherwise the cheap checkpoints subsidize nothing and the run's cost stops
   tracking its risk.
-- **A plan doc that only grows.** Every round adds; nothing is ever pruned; the
-  persistent implementer re-reads all of it every round. Prune on pass.
+- **A working plan that only grows.** Every round adds; nothing is ever pruned;
+  the persistent implementer re-reads all of it every round. Prune on pass.
+- **Committing the working plan by habit.** Temporary execution plans, progress
+  lists and review reports do not belong in Git by default; a repo plan needs the
+  user's durable-roadmap approval, not a `.gitignore` workaround.
+- **Relaying findings before validation.** A reporter's chain is a candidate, not
+  a repair order. Skipping the one batch validation turns review into churn and
+  can send Harry to fix a non-defect.
+- **One validator per finding.** "Independent validation" does not mean spawning
+  an agent for every finding; that is the fan-out cost with none of the coverage.
+- **Treating review rounds as progress.** Three completed cycles with the same
+  blocking findings is a signal to reassess, not to queue a fourth automatic
+  round. Re-scoping or renaming the same work to reset the counter is the
+  auto-reset loophole.
+- **Escalating because churn hit the cap.** Voldemort exists for same-root
+  failure evidence, not for reviewer noise.
+- **Letting an agent stand in for a required human approval.** Model consensus
+  and a green gate cannot sign off a policy-, release-, or migration-gated
+  decision.
+- **Approving a green suite over an untested path.** Zero confirmed findings with
+  open required verification is still blocked.

@@ -73,11 +73,17 @@ and repair separate preserves independence on the next round).
   whether the next checkpoint adds it.
 - **Prove a suspected bug by construction, not by compiling.** If you think
   you found a P1, build the causal chain in writing: the exact input or state,
-  the line it reaches, the wrong result. When only execution can settle it, do
-  not build a PoC yourself — hand Harry a **prove-or-refute request** (the
-  input, the expected failure, the test you want written) and mark the finding
-  *unproven pending Harry's test*. Harry already has the build; he writes the
-  failing test, which then stays as the regression lock. A chain nobody can
+  the line it reaches, the wrong result, and the guard you checked. When only
+  execution can settle it, do not build a PoC yourself — hand Harry a
+  **prove-or-refute request** and mark the finding *candidate / unproven pending
+  validation*. The request must name the finding ID, the reviewed snapshot, the
+  exact input/state, the **real integration entrypoint** (not a private test
+  seam), the **oracle** that fails for this reason, the expected failure, the
+  test to write, and the bounded scenario being settled. The full staged proof
+  protocol is in `review-contract.md`: Harry first returns the unchanged
+  pre-fix red evidence for non-origin confirmation (no repair yet), then green
+  after the authorized fix; closure comes from independent re-review. A static
+  code/data-flow chain can confirm without execution; a chain nobody can
   construct or execute is an open question, not a finding.
 - **State verification boundaries honestly.** If you cannot actually execute
   something here (no GPU, no network, no device, no real load), say so plainly
@@ -90,19 +96,29 @@ and repair separate preserves independence on the next round).
   with a one-line reason. Accepted deviations that diverge from the spec become
   errata to reconcile at closeout.
 
-## Severity scheme
+## Findings: severity, evidence, disposition
 
-Categorizing findings is what keeps the loop from either stalling on nits or
-shipping real bugs. Three tiers:
+Canonical definitions, the required finding record, validation and the checkpoint
+cap live in `review-contract.md`; use it rather than restating it. The three
+axes are independent:
 
-- **P1 — blocking, correctness.** A real defect. State a concrete failure
-  scenario (specific inputs/state → wrong output or crash), not a general worry.
-  Must be fixed to pass.
-- **P2 — blocking, should-fix.** A spec violation, a missing required test, a
-  contract mismatch, a tautological assertion that verifies nothing. Fixed to
-  pass unless explicitly waived.
-- **P3 — non-blocking.** Style, doc wording, future-proofing, an observation for
-  a later checkpoint. Record it and carry it forward; do not block on it.
+| Axis | Values | Meaning in one line |
+| --- | --- | --- |
+| Severity | P1 / P2 / P3 | Impact if true. P1 = blocking correctness; P2 = blocking should-fix (spec, required test, missing evidence); P3 = non-blocking, carried. |
+| Evidence status | `candidate` / `confirmed` / `refuted` / `needs-evidence` | What is established now. A P1/P2 candidate blocks until confirmed or refuted; `needs-evidence` names an owner, next step and blocking/risk route and is never an approval. |
+| Disposition | `fix-required` / `waived-P2` / `carry-P3` / `closed-refuted` / `closed-fixed` / `routed-out-of-scope` / `blocked-needs-evidence` | What happens next. |
+
+A confirmed P1 is never waived. A P2 waiver is explicit, attributed and scoped —
+never inferred from silence. P3s are recorded and carried, not turned into
+automatic cosmetic fixes. Every P1/P2 candidate needs a stable ID, source
+snapshot, provenance (`pre-existing` / `cp-introduced` / `repair-introduced`),
+trigger/input, file:line, causal chain, the existing guard or counterexample
+checked, validation owner/evidence, and a closure reason (`review-contract.md`).
+
+**A checkpoint passes only when the approval gate in `review-contract.md` is
+satisfied** — every candidate accounted for, no confirmed or blocking
+`needs-evidence` P1/P2 open, the gate green — not merely when the reviewer has no
+new P1/P2 to report.
 
 **Every ruling owes a causal chain.** This binds all of them — a finding, a
 deviation accepted, a deviation rejected, an approval. State the chain: *this*
@@ -115,9 +131,6 @@ does not.
 If you cannot build the chain, say exactly that and route it as an open
 question to whoever can settle it. Do not launder an unbuilt chain into a
 finding, and do not launder it into an approval.
-
-**A checkpoint passes when P1 and P2 are cleared to zero** and the gate is green.
-P3s ride along in the plan doc's carry-forward memos.
 
 ## Re-review (after a fix)
 
@@ -145,6 +158,16 @@ round bought nothing. For an especially high-risk checkpoint, the orchestrator m
 still ask for a **full re-review** at initial depth — worth the cost where a miss
 is expensive, but it should be asked for, not assumed.
 
+Reuse stable finding IDs across rounds; do not repost the same defect, and
+reopen a closed finding only when its premise changed or new evidence appeared
+(including a `repair-introduced` regression). When a confirmed finding names a
+class of bug, check the same class inside this checkpoint's scope; record
+instances outside the scope and route them explicitly instead of silently
+expanding or dropping them. Every round also updates the cycle counter and
+stops automatic iteration at the checkpoint convergence cap
+(`review-contract.md`) — the cap is distinct from the per-root Harry/Voldemort
+attempt limits and never resets them.
+
 ## Inputs it receives
 
 The **review brief** (see template below): the diff to review, the baseline, the
@@ -157,14 +180,23 @@ A **review report** back to the orchestrator (the handoff payload — see
 `loop.md`):
 
 1. **Verdict:** APPROVE or REQUEST-CHANGES.
-2. **Findings**, each tagged [P1 / P2 / P3], with file:line, a concrete failure
-   scenario, and a suggested fix.
+2. **Findings**, each with a stable ID, [P1 / P2 / P3] severity, evidence status,
+   disposition, provenance, source snapshot, file:line, concrete failure
+   scenario, the guard/counterexample checked, and a suggested fix. Include the
+   prove-or-refute details for anything only execution can settle.
 3. **Deviation rulings:** accept/reject each declared deviation, one-line reason.
 4. **Gate verification results:** what you audited in Harry's evidence (you
-   ran nothing), and — honestly — which findings remain unproven pending a
-   prove-or-refute test from Harry.
-5. **Downstream memos (on APPROVE):** anything a *later* checkpoint must watch out
+   ran nothing), and — honestly — which findings remain `needs-evidence` pending
+   validation or a repro from Harry.
+5. **Security triage:** the named sensitive surfaces you checked (or "none
+   named"), and whether the scoped security lens is required.
+6. **Cycle use:** which review/response cycle this report is, and whether the
+   checkpoint convergence cap is reached (`review-contract.md`).
+7. **Downstream memos (on APPROVE):** anything a *later* checkpoint must watch out
    for that you noticed now.
+
+Findings you report are `candidate` until the batch validator confirms or
+refutes them; do not present your own reading as confirmed proof.
 
 ---
 
@@ -193,14 +225,34 @@ lens" is.
 **The orchestrator then approves, trims, or adds.** He holds three things the
 reviewer structurally does not: cross-checkpoint memory, dispatch authority, and
 the budget. So he trims a four-lens request on a mechanical move, and — this is
-the part that is easy to skip — **he adds an adversarial lens against Severus
-himself when the checkpoint's verdict rests mainly on Severus's own reading**.
-A reviewer will not invite someone to challenge him; if his call is load-bearing
-and wrong, nothing else in that round catches it.
+the part that is easy to skip — **he adds a claim refuter aimed at Severus's
+conclusion when the checkpoint's verdict rests mainly on Severus's own
+reasoning**. A reviewer will not invite someone to challenge him; if his call is
+load-bearing and wrong, nothing else in that round catches it.
 
-Whatever the panel, **the per-finding refutation pass stays** (below). It sits
-outside the panel, so a self-requested panel cannot quietly protect its own
-conclusions.
+### Coverage specialist vs claim refuter
+
+A dispatch must name which job a lens is doing; "send a specialist" is
+underspecified and invites a duplicate full review.
+
+- **Coverage specialist** — dispatched for a **named uncovered boundary**: a
+  second layer with different rules, a different artifact class, a dependency
+  boundary not in this repo, or a security surface the default sweep cannot see.
+  The specialist owns that surface and may find anything in it; its output is
+  coverage of the named boundary, not a second opinion on findings already
+  settled. If you cannot name the boundary, do not dispatch a coverage lens.
+- **Claim refuter** — a **bounded challenge to one critical conclusion** the
+  verdict relies on. Its question is "is this specific conclusion true?", so it
+  constructs the chain or demonstrates that none exists. It may read the same
+  surface as Severus precisely because it is not re-running the whole review;
+  it does not duplicate coverage, reopen settled findings without a changed
+  premise, or offer a second opinion on an unfalsifiable claim.
+
+This resolves the old tension: the review economy still bans a second generic
+sweep, but a load-bearing conclusion that was asserted rather than built gets a
+challenger even when the surface is the same. The refuter sits outside the panel
+and is not selected by the panel, so a self-requested panel cannot quietly
+protect its own conclusions.
 
 ## Reviewer variants — the professor bench
 
@@ -253,6 +305,44 @@ panel of them widens coverage rather than duplicating it.
 Whatever the mix, preserve the invariant and the discipline: independent from the
 author, categorized findings, gates verified, boundaries stated honestly.
 
+## Security triage and human gates
+
+**Every checkpoint gets a lightweight security triage, not a standing security
+review.** Severus names the sensitive surfaces the change touches (or states
+"none named") and records the result in the review report. This is a reading
+pass, not a panel.
+
+A **named sensitive surface requires the scoped security lens** — Alastor, or an
+equivalent non-origin security reviewer — rather than relying on Severus to ask
+for one. The trigger is the surface, not the reviewer's confidence. Named
+surfaces include:
+
+- permissions, authorization, ownership boundaries, tenant isolation;
+- secrets, credentials, tokens, keys, signing material;
+- untrusted input: parsing, deserialization, uploads, path/command/SQL/template
+  construction;
+- CI, release, install, update, migration and build/dependency configuration;
+- authentication/session flows and cryptography;
+- PII in logs, telemetry, errors or caches;
+- external network calls, webhooks, and trust-boundary crossings.
+
+The scoped review covers that boundary with its own evidence; it is not a license
+to run a full panel or to duplicate Severus's sweep. Its findings enter the same
+batch validation and finding record.
+
+**Human approval and rollback are planned, not assumed.** The plan's risk field
+links the boundary → the evidence that would settle it → the owner → the
+budget/stop condition, plus a named human approver where policy, irreversibility,
+release, deployment or migration requires one, and a rollback owner. An agent
+consensus, a green gate, or the user having requested the work does **not**
+substitute for a required human approval or a final signoff. Where no human gate
+is required, the plan says so with a reason.
+
+The skill's rules are textual workflow policy. They do not install tool ACLs,
+approval machinery, or runtime enforcement; direct manual dispatch can bypass
+them (`SKILL.md`), and a host-level permission must still be configured at the
+host.
+
 ---
 
 ## Argus — the closeout UI walkthrough
@@ -261,7 +351,7 @@ Argus is the exception to per-checkpoint dispatch: he patrols **once, after the
 last checkpoint passes and before the closeout doc is written**. Two
 preconditions, both settled at Plan time:
 
-- **A UI truth to compare against.** The plan doc carries the requirement's
+- **A UI truth to compare against.** The working plan carries the requirement's
   Figma links — Albus records them while planning. No links, no Argus: a UI
   review without a design source of truth is vibes, and UI verification then
   routes to manual acceptance instead.
@@ -299,7 +389,7 @@ You review and rule; you do NOT modify code and do NOT rebuild the app.
 - Flows to walk: <the flows/screens this milestone touched>.
 
 ## Standard to compare against
-- Figma: <links from the plan doc, per screen/flow>.
+- Figma: <links from the working plan, per screen/flow>.
 - Per screen, also check: size classes, dark mode, dynamic type,
   empty/loading/error states.
 
@@ -325,7 +415,7 @@ You review and rule; you do NOT modify code (Harry fixes what you find).
 - Baseline: <HEAD hash — unpassed changes only>
 
 ## Standard to review against
-- <spec section(s)> + <plan doc CP-N> + Harry's declared deviations.
+- <spec section(s)> + <working plan CP-N> + Harry's declared deviations.
 
 ## Focus (in priority order)
 1. <highest-risk area for this checkpoint — the thing most likely to hide a bug>
@@ -342,19 +432,30 @@ You review and rule; you do NOT modify code (Harry fixes what you find).
   rerun the suite, do NOT compile PoCs — all execution happened on Harry's side
   before this brief reached you.
 - If you suspect a bug, construct the causal chain in writing; if only running
-  it can settle the question, return a prove-or-refute request for Harry
-  (input, expected failure, the test to write) and mark the finding unproven.
+  it can settle the question, return a prove-or-refute request for Harry with the
+  finding ID, reviewed snapshot, exact input/state, real integration entrypoint,
+  oracle, expected failure, and the test to write, and mark the finding
+  `candidate` / `needs-evidence`.
+- Do a lightweight security triage: name the sensitive surfaces touched, or say
+  "none named". Do not assume someone else will request the security lens.
 - If something can't be verified by reading (device-only behaviour, timing),
   SAY SO and route it to Harry's tests or manual acceptance — never present
   static analysis as a live test.
 
 ## Output
 - Verdict: APPROVE or REQUEST-CHANGES.
-- Findings, each tagged [P1 blocking-correctness / P2 blocking-should-fix /
-  P3 non-blocking], with file:line + a concrete failure scenario (inputs → wrong
-  result), and a suggested fix.
+- Findings, each with a stable ID, [P1 blocking-correctness / P2
+  blocking-should-fix / P3 non-blocking] severity, evidence status
+  (candidate/confirmed/refuted/needs-evidence), disposition, provenance, source
+  snapshot, file:line, a concrete failure scenario (inputs → wrong result), the
+  guard checked, and a suggested fix.
 - A ruling for each of Harry's declared deviations.
 - Your gate verification results (what you audited — you ran nothing — and the
   prove-or-refute requests you are handing to Harry).
+- Security triage result and the cycle number (against the convergence cap).
 - If APPROVE: note anything the NEXT checkpoint must watch out for (memos).
+
+Read `review-contract.md` for the finding record, the batch validation that
+happens after your report, and the checkpoint cap. You do not validate your own
+findings; Albus or another non-origin reviewer does that in one batch.
 ```

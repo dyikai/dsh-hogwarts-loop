@@ -40,8 +40,10 @@ small). Heuristics that held up:
 ### The Plan Albus produced
 
 The milestone's spec had ~13 implementation steps (S1–S13). Albus grouped them
-into 8 checkpoints — this table *is* the plan doc's checkpoint map, the output of
-the Plan stage that then drives every build/review below:
+into 8 checkpoints — this table *is* the working plan's checkpoint map, the output
+of the Plan stage that then drives every build/review below (the working plan's
+storage is a separate decision; it is session/temp by default, not a committed
+file):
 
 | CP | What | Why it's its own checkpoint |
 |----|------|------------------------------|
@@ -60,7 +62,10 @@ isolated; the deepest reviews land on CP3 and CP6 by design.
 
 ## Worked review round-trip — the bug the loop caught
 
-This is the single clearest case for why Severus must not be the author.
+This is the single clearest case for why Severus must not be the author. It is a
+teaching reconstruction under the current contract, not a transcript of the
+historical run; where the old run used a reviewer-written repro, the text says
+so instead of presenting it as current practice.
 
 **CP5 delivered a long-press recognizer.** Harry's report: feature built, unit
 tests green, gates pass. The unit tests fired a 500 ms timer via a `MockClock`,
@@ -86,23 +91,39 @@ Result: the long-press only fired when the user *released* — it had degraded t
 called the flush directly, bypassing the exact frame-loop wiring that was
 broken.**
 
-**Severus proved it before escalating.** He wrote a throwaway repro driving the
-idle path (press → empty event-loop iterations → advance clock 500 ms) and
-confirmed the recognizer never accepted. That turned a hypothesis into a **P1
-with a concrete failure scenario** — and handed Harry an exact repro.
+**The finding still needed execution evidence — and under the current protocol
+Severus does not run it.** He returns a prove-or-refute request with the
+finding ID, the reviewed snapshot, the idle-path input, the real frame-loop
+entrypoint, the oracle (`accepted === true`), and the test to write. Harry writes
+the test and returns it red on the reviewed snapshot; only after non-origin
+confirmation does he apply the fix and record green on the fixed tree with both
+source stamps (`review-contract.md`). (The original run predates the no-build
+rule and used a reviewer-written throwaway repro; that is not the current
+discipline, and the historical step is not retrofitted as if it were.) The static
+trace is what makes the candidate worth testing; the red repro is what confirms
+it.
 
 **The round-trip (edges D→E→F→C in `loop.md`):**
-- Severus → REQUEST-CHANGES, one P1: *long-press never accepts on the idle path*,
-  with the trace and the repro.
+- Severus → REQUEST-CHANGES: one P1 **candidate**, *long-press never accepts on
+  the idle path*, with the trace and the prove-or-refute request.
+- Albus batch-validates the blocking candidate (one non-origin pass; the static
+  trace plus the requested oracle/entrypoint) before relaying it. The candidate
+  is `needs-evidence`, so E authorizes evidence collection only — not repair.
+- Harry runs the unchanged integration test red on the reviewed snapshot and
+  returns the raw output plus the pre-fix stamp; the non-origin validator checks
+  the oracle/entrypoint and confirms. No repair happened before this point.
 - Harry fixes: the timer callback now also requests a frame, so the loop re-arms
   and the arena is polled. One-line core fix.
-- Harry adds the missing test: an **integration** test that drives the idle path
-  end-to-end (the thing the original unit test bypassed), locking the bug against
-  recurrence.
-- Severus re-reviews: confirms the gate is green on the fixed state by auditing
-  Harry's fix-round evidence (command, raw output, tree-state stamp — he runs
-  nothing himself, per `loop.md`'s Gate economy), confirms the new test actually
-  exercises the previously-broken path (not another direct-call bypass), APPROVE.
+- Harry keeps the test unchanged and returns green on the fixed tree with the
+  second stamp: an **integration** test that drives the idle path end-to-end
+  (the thing the original unit test bypassed), locking the bug against recurrence.
+- Severus re-reviews the fix and post-fix evidence: confirms the gate is green on
+  the fixed state by auditing Harry's fix-round evidence (command, raw output,
+  tree-state stamps — he runs nothing himself, per `loop.md`'s Gate economy),
+  confirms the test exercises the previously-broken path (not another direct-call
+  bypass), reuses the same finding ID, and closes it; APPROVE. The checkpoint
+  used **two** review/response cycles (the pre-fix evidence report and the repair
+  report), so the convergence cap is not in play.
 
 **The lesson, generalized:** green tests mean "what the author thought to test
 passed," not "the code is correct." The bugs that ship are the ones on the paths
@@ -110,3 +131,29 @@ the author didn't think about — the idle case, the empty case, the reentrant
 call, the concurrent window. An independent reviewer whose job is to *find* those
 paths is the mechanism that catches them. Everything else in this skill exists to
 support that one move.
+
+## The same bug as a finding record
+
+Under the current contract, the example above would be recorded like this. This
+table is a **teaching reconstruction** of the same defect under the current
+`review-contract.md`, not a recovered historical record.
+
+| Field | Value |
+| --- | --- |
+| ID | `F-CP5-1` (reused on re-review; never renumbered) |
+| Severity | P1 — the gesture never accepts on its literal path |
+| Evidence | `candidate` at review → `needs-evidence` (repro authorized) → `confirmed` by a non-origin validator from the pre-fix red evidence → `closed-fixed` only after independent re-review of the fixed state and post-fix evidence |
+| Provenance | `cp-introduced` |
+| Trigger | press and hold, no further input, advance 500 ms |
+| Location | `recognizer.js:<timer callback>` → `frame-loop.js:<poll>` |
+| Chain | timer sets flag → no frame requested → arena not polled → never accepted |
+| Guard checked | the unit test bypasses the frame loop; no production guard |
+| Validation | non-origin batch marks needs-evidence and authorizes evidence collection; validator confirms from red; Severus re-reviews fix and green |
+| Closure | independent re-review + regression test retained; Harry's F report only proposed it |
+
+If a checkpoint instead spends **three completed review/response cycles** with
+blocking findings still open, the loop stops automatic iteration and records the
+reassessment decision — the counters are preserved, new serious findings are
+still triaged, and a fourth automatic cycle is not queued. That cap is separate
+from the per-problem Harry/Voldemort attempt limits; the full precedence rule is
+in `review-contract.md`.

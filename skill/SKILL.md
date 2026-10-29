@@ -84,12 +84,17 @@ to this loop, not its job).
 ### The cast at a glance
 
 - **Planner / orchestrator — Albus (you).** *First* read the source of truth and
-  decompose it into a checkpoint plan (the living plan doc). *Then* drive the
-  loop: dispatch each stage, judge pass/fail, commit on pass, carry memos and
-  deviations forward. You are the only one who commits, and you never write the
-  feature code — that separation keeps your judgment uncontaminated by authorship.
-  You also own post-review cleanup: remove this run's temporary artifacts before
-  advancing or replying, without waiting for the user (`references/loop.md`).
+  decompose it into a checkpoint plan recorded in the **working plan**. Choose its
+  storage explicitly: session memory or a task-scoped temp root outside the
+  workspace by default; a repository plan only when the user approves it as a
+  maintained roadmap/design document. Temporary execution plans, progress lists
+  and review reports are not committed by default and are not hidden behind
+  `.gitignore`. *Then* drive the loop: dispatch each stage, judge pass/fail,
+  commit code/tests on pass, carry memos and deviations forward. You are the only
+  one who commits, and you never write the feature code — that separation keeps
+  your judgment uncontaminated by authorship. You also own post-review cleanup:
+  remove this run's temporary artifacts before advancing or replying, without
+  waiting for the user (`references/loop.md`).
 - **Implementer — Harry.** Builds one checkpoint to spec, runs the gates (all
   build/test execution is his and happens during development — every test the
   checkpoint needs is written, built and run before delivery; a red gate never
@@ -103,8 +108,10 @@ to this loop, not its job).
   by reading and reasoning — **review time is read time: no builds, no test
   runs, no PoC compiles**; a suspicion only execution can settle goes back to
   Harry as a prove-or-refute request — returns APPROVE or REQUEST-CHANGES with
-  categorized findings, rules but never fixes. The one reviewer who touches a
-  build is Argus, and only to launch the artifact Harry already built.
+  categorized findings, rules but never fixes. Findings are candidates until a
+  non-origin validator confirms them; the reviewer never validates his own. The
+  one reviewer who touches a build is Argus, and only to launch the artifact
+  Harry already built.
 - **Escalation implementer — Voldemort.** Behaves exactly like Harry — same
   gates run during development, same green tree plus raw evidence, never commits
   — but he runs on the stronger model configured for his seat and is dispatched
@@ -114,8 +121,9 @@ to this loop, not its job).
 Keep every role as a **distinct subagent with persistent context** across the
 whole parent session. Each checkpoint is a new assignment, not a new agent.
 Harry and Severus keep the same childIds for subsequent checkpoints and
-fix→re-review rounds. The plan doc supplements their memory and bootstraps a
-new cast only when work moves to a genuinely new parent session.
+fix→re-review rounds. The working plan supplements their memory and bootstraps a
+new cast only when work moves to a genuinely new parent session; its storage
+(durable repo doc vs session/temp) does not change the role binding.
 
 ### Simplify large deliveries before review
 
@@ -165,6 +173,62 @@ back to the user with the problem statement, the five attempts (3 × Harry,
 dispatch a fourth Harry, do not dispatch a third Voldemort, and do not quietly
 widen the checkpoint scope to make it pass.
 
+These are **same-root attempt limits**. They are separate from the
+checkpoint-wide convergence cap below: one counts attempts on a problem, the
+other counts completed review/response cycles for a checkpoint. Neither resets
+the other, and a cap hit is never a reason to escalate without same-root failure
+evidence.
+
+### Review findings and the checkpoint cap
+
+Canonical definitions live in **`references/review-contract.md`**. Keep three
+axes distinct instead of collapsing them into "fixed":
+
+- **severity** — P1 blocking correctness, P2 blocking should-fix, P3 non-blocking;
+- **evidence status** — `candidate`, `confirmed`, `refuted`, `needs-evidence`;
+- **disposition** — fix-required, waived-P2, carry-P3, closed-refuted,
+  closed-fixed, routed-out-of-scope, blocked-needs-evidence.
+
+Every blocking finding carries a stable ID, source snapshot, provenance
+(pre-existing / CP-introduced / repair-introduced), trigger/input, file:line,
+causal chain, the existing guard or counterexample checked, validation
+owner/evidence, and a closure reason. **Albus batch-validates all blocking and
+security candidates in one non-origin pass between the review report and the
+fix relay** — no per-finding agent, no silent approval. A complete static
+code/data-flow chain can confirm; if execution is truly required, E authorizes
+evidence collection before repair, not an unconfirmed fix. A confirmed P1 is never
+waived; a P2 waiver is explicit and attributed; P3s are carried, not auto-fixed.
+
+**After three completed review/response cycles without resolution, stop the
+automatic next iteration.** Reassess approach, scope, and reviewer churn, and
+record an explicit decision: stop/report or a bounded, human-authorized
+continuation with preserved counters. Never auto-reset the counter by
+re-scoping, renaming, swapping reviewers, or escalating. Newly discovered
+serious issues are still triaged and routed at the cap — never dropped to make
+the number.
+
+### Security triage, human approval, and evaluation
+
+- **Every checkpoint gets a lightweight security triage.** A named sensitive
+  surface (permissions/authz, secrets, untrusted input, CI/release/install,
+  crypto, PII, external trust boundaries) requires the scoped security lens
+  (Alastor), not merely Severus deciding to ask.
+- **The plan carries a risk field:** boundary → evidence → owner → budget/stop,
+  plus a named human approver where policy, irreversibility, release, deployment
+  or migration requires one, and a rollback owner. Agents, model consensus, and
+  green gates do not replace a required human approval; the user asking for the
+  work is not automatically the final signoff.
+- **Feedback is lightweight and honest** (`references/evaluation.md`): outcome
+  counts, cycles, and measured cost when available, plus escaped defects. The
+  synthetic seeds under `assets/` are clearly labelled examples, not historical
+  incidents and not a measured score. Do not claim reviewer improvement without
+  running the comparison on the same frozen snapshot with non-treatment
+  variables held equal and the intentional prompt/model/tool/config change
+  recorded.
+- These rules are **textual workflow policy, not tool ACLs or approval
+  machinery**. The host must enforce permissions and approvals; direct manual
+  dispatch can bypass the skill discipline.
+
 ### Build once, in development
 
 All compiling and testing belongs to the development side of the loop. Harry
@@ -175,9 +239,10 @@ up simulators, and do not get worktrees to build in — every build a reviewer
 starts is cost the loop already paid once, and a rerun on an unchanged tree
 verifies the reporter, not the code. When a reviewer's suspicion can only be
 settled by running something, it returns as a **prove-or-refute request**
-(input, expected failure, the test to write) that Albus routes to Harry, who
-has the build and writes the test that settles it — a test that then stays as
-the regression lock. The single exception is the UI walkthrough (Argus), which
+(input, expected failure, the test to write) that Albus routes to Harry. Harry
+has the build: he returns the unchanged pre-fix red evidence for non-origin
+confirmation, then fixes only after confirmation; the test stays as the
+regression lock. The single exception is the UI walkthrough (Argus), which
 launches the already-built app and never rebuilds it.
 
 ### Where the detail lives
@@ -186,18 +251,32 @@ This file is the overview. The operational detail lives in the skill directory;
 read — or paste into a child's brief — the file for the role you are dispatching:
 
 - **`references/planner.md`** — Albus's full responsibilities: how to plan
-  (decompose into checkpoints, define gates, write the plan doc), then dispatch,
-  judge, commit, and keep the run honest.
+  (decompose into checkpoints, define gates, write the working plan and choose
+  its storage/retention), then dispatch, judge, commit code/tests, and keep the
+  run honest.
 - **`references/implementer.md`** — Harry's full responsibilities and the
   dispatch brief you send him.
-- **`references/reviewer.md`** — Severus's full responsibilities, the P1/P2/P3
-  severity scheme, adversarial technique, the professor bench
-  (Severus=correctness lead, Alastor=security, Filius=performance,
-  Minerva=concurrency, Argus=closeout UI walkthrough), review panels, and how to
-  wire in built-in review tooling.
+- **`references/reviewer.md`** — Severus's full responsibilities, the finding
+  axes, adversarial technique, the professor bench (Severus=correctness lead,
+  Alastor=security, Filius=performance, Minerva=concurrency, Argus=closeout UI
+  walkthrough), coverage specialists vs claim refuters, review panels, security
+  triage, and how to wire in built-in review tooling.
+- **`references/review-contract.md`** — the canonical finding record and
+  lifecycle (severity / evidence status / disposition), batch validation, the
+  prove-or-refute evidence standard, stable IDs and class-of-bug handling, and
+  the checkpoint-wide three-cycle convergence cap with its escalation precedence.
 - **`references/loop.md`** — the per-checkpoint state machine, the data handoff
   between Albus, Harry, and Severus, and the transport mechanics for continuing
   the same children across rounds.
+- **`references/evaluation.md`** — lightweight outcome feedback, the synthetic
+  seed corpus and its input/expectation separation, and the honest limits of any
+  comparison.
 - **`references/example.md`** — a concrete worked run: checkpoint-sizing
   heuristics, a real milestone decomposition, and one full review round-trip.
-- **`assets/plan-template.md`** — skeleton for the living plan doc.
+- **`assets/plan-template.md`** — skeleton for the working plan (including the
+  storage/retention decision, risk/approval, review-ledger and convergence
+  fields). The template is a product asset; each run's filled plan is not
+  committed by default.
+- **`assets/eval-inputs.md` / `assets/eval-expectations.md`** — synthetic seed
+  targets and their answers; keep them separate and never paste the expectations
+  into a reviewer brief.
