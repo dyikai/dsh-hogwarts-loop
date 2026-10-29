@@ -1,6 +1,6 @@
 {
   "name": "@dyikai/dsh-hogwarts-loop",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Hogwarts-loop as a DeepSeek Harness plugin: per-role subagent dispatch on configurable models, with a client settings page.",
   "author": "dyikai",
   "type": "module",
