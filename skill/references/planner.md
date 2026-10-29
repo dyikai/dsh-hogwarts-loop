@@ -36,6 +36,11 @@ commit discipline are the rest.
   collapse into one; on a slow-build stack (Xcode, big monorepos) the placement
   of full-gate runs is a real budget decision, and unaffordable suites (UI/e2e)
   get pulled into an explicit milestone gate.
+- **Plan the conditional ablation gate** (`ablation.md`). Record the checkpoint
+  baseline and default thresholds, or justify project-specific thresholds before
+  implementation. Every Harry report includes measurements; triggered work needs
+  experiments and a validated survivor before review. Preserve the last validated
+  ablation baseline across subthreshold repair reports.
 - **Write the living plan doc** (`assets/plan-template.md`): checkpoint map, gates,
   acceptance mapping, deviation registry, carry-forward memos. Commit it first — it
   is the spine of the run and its memory between stages. If the requirement comes
@@ -65,9 +70,9 @@ commit discipline are the rest.
 
   1. **Is there a memo addressed to this checkpoint?** Trigger: search the plan's
      carry-forward memos for this checkpoint's id. Whatever you find is mandatory
-     briefing. This is the one class of lens only you can supply — a reviewer
-     spawned on this diff cannot see what earlier reviews established, so he
-     cannot ask for it.
+     briefing. Do not rely on the reviewer's memory alone: he may not have seen
+     another role's earlier findings or Albus's decisions, so cannot be expected
+     to ask for a constraint he was never given.
   2. **Is this the first checkpoint of its kind in the run?** Trigger: has any
      earlier checkpoint done this *category* of work — first to register a file
      with the build system, first to introduce tests, first to drop an interface
@@ -106,10 +111,14 @@ commit discipline are the rest.
   reach. When you do convene, spend on lenses that ask a *different question*,
   not on re-asking the same one harder.
 - On REQUEST-CHANGES, relay the blocking findings back to Harry, and loop.
-- Transport discipline: spawn each role once at its first dispatch, then send
-  every later brief to that *same* agent; rehydrate a fresh agent from the plan
-  doc when a session break loses the context; isolate parallel checkpoints in
-  worktrees. Mechanics in `loop.md` (Transport).
+- Transport discipline: use `hogwarts_dispatch` at every edge. It creates each
+  role once per parent session, then sends every later brief to that *same*
+  child. Record the returned childId; CP completion and `inactive` never mean
+  replacement. Resume the same parent session to recover its cast. Only a new
+  parent session gets a new cast, rehydrated from the plan. A continuation error
+  blocks dispatch rather than authorizing a replacement. Run Harry's CPs
+  serially; parallel review roles remain allowed. Mechanics in `loop.md`
+  (Transport).
 
 ### 3. Judge
 
@@ -121,8 +130,12 @@ commit discipline are the rest.
 - When Harry and Severus disagree, *you* adjudicate: rule the contested point and
   record the decision. The reviewer proposes; the planner decides.
 
-### 4. Commit & advance
+### 4. Clean up, commit & advance
 
+- **Own post-review cleanup.** After receiving Severus's final verdict, apply
+  `loop.md` (Temporary artifacts) before committing, advancing or handing work
+  back. A reviewer finishing does not finish your job; verify the workspace and
+  preserve the user's files and staging without waiting for a cleanup request.
 - On pass, commit the checkpoint as **one traceable unit** — the code *and* the
   plan-doc status update in the same commit. Stamp the checkpoint ✅ with date +
   commit hash.
@@ -172,8 +185,8 @@ For each checkpoint, in dependency order (edges are specified in `loop.md`):
 4. Receive the review report (edge D).
 5. If REQUEST-CHANGES → relay findings (edge E) → Harry fixes (edge F) → re-review
    (back to edge C). Loop until clean.
-6. If APPROVE and gate green → commit + stamp the plan + fold memos forward →
-   advance to the next checkpoint.
+6. If APPROVE and gate green → complete and verify temporary-artifact cleanup →
+   commit + stamp the plan + fold memos forward → advance to the next checkpoint.
 
 After the last checkpoint: dispatch Argus for the closeout UI walkthrough if
 the plan doc carries Figma links (`reviewer.md`) — his P1/P2 loop through Harry

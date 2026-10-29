@@ -12,6 +12,9 @@
 > <closeout + riskiest CPs>
 > Discipline: per-checkpoint "implement → review → fix" loop; a checkpoint
 > advances only when Severus (the reviewer) APPROVES and the gate is green.
+> Cast: <parent session id>; Harry <childId>; Severus <childId>.
+> Reuse these children across CPs and repair rounds; an inactive child is not a
+> replacement trigger. Record other roles' childIds when first dispatched.
 
 ---
 
@@ -51,6 +54,13 @@ Legend: ⬜ not started / 🔄 in progress / ✅ passed (date + `hash`) / ◐ pa
 **Gate:** fast: <touched targets + this CP's tests + static checks> · full:
 <whole-workspace commands + assertions that must pass>
 **Acceptance mapping:** <which top-level acceptance items this CP satisfies>
+**Ablation policy:** `references/ablation.md` defaults, or <predeclared overrides + reasons>.
+**Measurement baseline:** <checkpoint-start / last validated survivor stamp>.
+**Complexity report:** <baseline → tree; production lines/files; named mechanisms;
+high-cost flags; exclusions; triggered / not triggered>.
+**Experiments (when triggered):** <artifact link: ID, one removal/substitution,
+variant stamp/patch, command/raw result, behavior/cost change, keep/revert/reason>.
+**Validated survivor / next repair baseline:** <stamp + final gate evidence>.
 
 ---
 
@@ -89,7 +99,9 @@ closeout.
 1. Tick items as they land; stamp the CP row ✅ + date + commit hash on pass.
 2. A gate failure or unresolved P1/P2 blocks the next dependent CP.
 3. Implementation decisions that diverge from the spec go in §5, always.
-4. Each passing CP is one commit (code + this doc's update) for traceability.
+4. Before advancing or replying, Albus completes `references/loop.md` temporary-
+   artifact cleanup and checks the workspace; preserve user files and staging.
+5. Each passing CP is one commit (code + this doc's update) for traceability.
 
 ## 7. Version history
 

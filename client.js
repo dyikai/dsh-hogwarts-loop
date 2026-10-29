@@ -27,7 +27,7 @@ window.__ModuleLoader__.load({
     /** Locale strings; the Client locale service routes the active one. */
     const EN = {
       title: 'Hogwarts Loop',
-      intro: 'Each cast role runs on its own model. The change applies to the next dispatch.',
+      intro: 'Each role keeps one child per session. Saved model settings apply to newly created roles, not existing children.',
       roles: 'Cast',
       delegation: 'Delegation',
       provider: 'Provider',
@@ -59,7 +59,7 @@ window.__ModuleLoader__.load({
     }
     const ZH = {
       title: '霍格沃茨循环',
-      intro: '每个角色使用各自的模型；保存后，下一次派发即生效。',
+      intro: '同一会话内每个角色复用一个子代理；保存的模型设置仅用于新建角色，不改变已有子会话。',
       roles: '演员表',
       delegation: '派发设置',
       provider: 'Provider',

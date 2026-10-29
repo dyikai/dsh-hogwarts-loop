@@ -20,7 +20,7 @@ loosely-run loop leaks.
         │                                                                            │
         │   ALBUS (orchestrator) ─[A: implementer brief]─▶ HARRY (implementer)      │
         │        ▲                                      │                            │
-        │        │                              builds + runs gates                  │
+        │        │                              builds + ablates + gates                  │
         │        └──────[B: delivery report]───────────┘                            │
         │        │                                                                   │
         │   orchestrator ──[C: review brief]──▶ SEVERUS (reviewer)                   │
@@ -52,8 +52,9 @@ loosely-run loop leaks.
 ```
 
 A checkpoint exits (edge → APPROVE) only when Severus approves **and** the full
-gate is green on the exact state being committed (see Gate economy below). Both,
-every time.
+gate is green on the exact state being committed (see Gate economy below).
+Before review, every delivery must also satisfy the conditional complexity and
+ablation gate in `ablation.md`; missing required experiments are not review-ready.
 
 ## The handoff payloads
 
@@ -63,7 +64,7 @@ between roles.
 ### A — orchestrator → Harry: *implementer brief*
 - Checkpoint scope (this checkpoint's deliverables only).
 - Exact spec section references (the standard to build to).
-- Gate commands (the done-condition).
+- Gate commands (the done-condition), measurement baseline and `ablation.md` policy.
 - Hard constraints (frozen surfaces, layering/dependency rules, etc.).
 - **Carried memos**: constraints Severus flagged in earlier checkpoints that this
   one must honor.
@@ -75,7 +76,10 @@ Full template in `implementer.md`.
   with the tree state they ran on.
 - Every deviation: ID + what changed + why.
 - Files changed / added.
+- Complexity measurements and trigger ruling; when triggered, experiment artifacts,
+  keep/revert decisions and combined-survivor evidence (`ablation.md`).
 - Self-flagged risk spots ("review this hardest").
+- Temporary-artifact inventory: exact paths owned by this run, for Albus's cleanup.
 - Confirmation: not committed, stayed in scope.
 
 ### C — orchestrator → Severus: *review brief*
@@ -83,7 +87,7 @@ Full template in `implementer.md`.
   crosses this edge (Albus bounces it at edge B).
 - How to see the diff + the baseline commit (only the unpassed changes).
 - Spec sections to check against.
-- Harry's declared deviation list (for rulings).
+- Harry's declared deviation list (for rulings) and complexity/ablation evidence.
 - Focus areas, highest-risk-first.
 Full template in `reviewer.md`.
 
@@ -118,44 +122,40 @@ own reading — a lens pointed at that reading. Then the panel runs and returns 
   touched module; expensive mode: the fast gate — the one final full gate lands
   before commit).
 - New tests added to lock each bug against recurrence.
+- Incremental complexity since the last validated ablation (or checkpoint start);
+  any newly triggered experiments and their final-survivor evidence.
 Then loop back to edge C for Severus's re-review.
 
 ## Transport — how the edges physically run
 
-The payloads above are messages between real agents; the transport is what makes
-"persistent context" true in practice rather than aspirational. Four rules:
+The payloads above are messages between real agents. In this Harness,
+`hogwarts_dispatch` is the transport for both creation and continuation:
 
-- **Spawn once per role, at first dispatch.** Harry comes into existence at the
-  first checkpoint's edge A, Severus at its edge C. The spawn prompt = the role
-  identity ("You are Harry…") + the role file (`implementer.md` / `reviewer.md`)
-  + that first brief. Name the agent after the role so it stays addressable
-  later. Run serial dispatches synchronously — the loop blocks on each edge's
-  payload anyway; reserve concurrent dispatch for a review panel (2–3 professors
-  on one diff) and for parallel checkpoints (below).
-- **Continue the same agent — never respawn.** Every later edge to the same role
-  (the next checkpoint's brief, a findings relay, a re-review) goes to the
-  *same* agent: on Claude Code, `SendMessage` to the agent you named; a fresh
-  `Agent` call is a blank context. Respawning looks harmless and silently
-  destroys the property you're paying for — Severus's memory of what he
-  flagged, Harry's memory of why he built it that way.
-- **Rehydrate when persistence breaks.** Agent contexts die with the session.
-  After a restart, a context compaction, or on a host that can't continue an
-  agent, spawn a fresh one and rebuild its memory from the plan doc: the role
-  file + the current checkpoint map + the deviation registry + the carry-forward
-  memos (for Severus, also his prior findings and rulings). This is the second
-  reason the plan doc must never lag — it is the only memory that survives the
-  cast.
-- **Isolate parallel checkpoints.** Two checkpoints with no dependency edge may
-  run concurrently — but Harry's work sits uncommitted, so two builds in one
-  working tree collide and pollute each other's review diff. Give each parallel
-  branch its own worktree (on Claude Code, the Agent tool's
-  `isolation: "worktree"`; or `git worktree` by hand) and its own implementer —
-  a second persistent agent (call him **Ron**), not Harry doing double duty —
-  with its own full review loop. Albus lands the approved branches in dependency
-  order and **has Harry run the whole gate on each merged state** (gate
-  execution stays with the builders): two changesets each green in isolation
-  can still break each other, and the post-merge gate is the only net that
-  catches that.
+- **Create once per role per parent session.** Harry starts at the first edge A,
+  Severus at the first edge C. Include the role file (`implementer.md` /
+  `reviewer.md`) and the first brief. Record each returned childId. The tool
+  returns without waiting for the work; wait for the delivery report before
+  advancing along a dependent edge.
+- **Continue at every later edge.** Call `hogwarts_dispatch` with the same role
+  for the next CP, findings relay, or re-review. Its childId remains the same;
+  `description` supplies the first display label, not a new identity; later
+  briefs do not relabel the child. Finishing a CP or
+  becoming inactive does not end the child's conversation. Never bypass reuse
+  by invoking a different spawning tool.
+- **Recover, do not replace.** Resuming the same parent session recovers the
+  durable binding and continues that child. Context compaction, plugin reload,
+  and returning from Voldemort are not replacement triggers. If the child
+  cannot be resumed, or older history contains ambiguous role identities,
+  report the error and stop that edge rather than quietly starting another
+  Harry. A genuinely new parent session gets a new cast; bootstrap it with the
+  role file, checkpoint map, deviation registry, and carry-forward memos (plus
+  prior findings and rulings for Severus).
+- **One implementer means serial CPs.** Do not submit concurrent checkpoints to
+  Harry as if they were separate workers. Independent specialists may review a
+  frozen diff concurrently. Parallel implementation in separate worktrees and
+  separate parent sessions requires an explicit plan; it is not an excuse to
+  create a second Harry in this session. After each approved branch lands,
+  Harry runs the full gate on the merged state before it advances.
 
 ## Gate economy — pay for verification once per state
 
@@ -301,8 +301,8 @@ Two habits keep it useful:
 - **Prune on pass.** When a checkpoint commits, its resolved findings and
   superseded reasoning have done their job. Collapse them to the durable residue
   — the rulings that constrain future work, the corrections to facts the run got
-  wrong — and archive the rest. Keep what a future checkpoint must honor; drop
-  the narrative of how it was found.
+  wrong — and discard temporary narratives under the cleanup policy below.
+  Keep what a future checkpoint must honor, not a new archive file by default.
 - **Brief by section, not by document.** A dispatch names the sections that bear
   on this checkpoint — its own entry, plus the specific standing constraints it
   must honor — and never says "read the plan." The document is a reference the
@@ -312,9 +312,44 @@ Two habits keep it useful:
 
 - **REQUEST-CHANGES:** relay the P1/P2 findings (edge E) → Harry fixes (edge F) →
   Severus re-reviews (edge C). Never advance with an open P1/P2.
-- **APPROVE:** commit the checkpoint as one traceable unit (the code **and** the
-  plan-doc status update in the same commit). Stamp the checkpoint ✅ with date +
-  commit hash in the plan. Then fold forward — see below.
+- **APPROVE:** Albus completes temporary-artifact cleanup below, then commits the
+  checkpoint as one traceable unit (code **and** plan update). Stamp it ✅ with
+  date + commit hash, then fold forward. Do not hand cleanup back to the user.
+
+## Temporary artifacts — Albus owns cleanup
+
+Review evidence must be available during review; it does **not** belong in Git by
+default. Use session/tool output when sufficient. When files are needed, choose
+one task-scoped temporary root outside the workspace, within allowed filesystem
+permissions, and pass its location to the workers. Track the exact paths this run
+creates; Harry includes that inventory in his delivery. Raw logs, experiment
+patches, snapshots, scratch scripts and per-run review reports are temporary,
+not deliverables. Do not hide them behind new ignore rules or commit them by
+default. Explicit user-requested artifacts are the exception.
+
+After Severus's final approval, and before committing, advancing or sending the
+final response, **Albus** must:
+
+1. Wait for every producer/consumer of those artifacts to finish. On
+   REQUEST-CHANGES, retain only evidence still needed for repair/re-review,
+   outside the workspace; remove superseded scratch work.
+2. Preserve a concise result, verification outcome and necessary carry-forward
+   decisions in the existing plan, conversation or PR—not a new audit bundle.
+   Keep source, regression tests and agreed deliverables.
+3. Verify resolved absolute targets and ownership, then remove this run's
+   temporary files, including any workspace leftovers and its temporary root.
+   Never infer ownership from a filename or untracked status; never use blanket
+   `git clean`, resets, or unstaging to make the tree look clean. Preserve user
+   files, pre-existing changes and staging; ask if ownership/retention is unclear.
+4. Inspect the workspace and Git status against the starting state and intended
+   deliverables. Also verify the known temporary paths are gone. Cleanup must not
+   change reviewed code/config/tests; if it does, return to validation/review.
+   If cleanup is blocked, name the remaining paths and reason rather than
+   claiming closeout is complete.
+
+Apply the same ownership-safe cleanup when ending or cancelling a run. Keep
+needed evidence until its consumers finish, not indefinitely after review. This
+is Albus's closeout gate, not an optional suggestion for the user.
 
 ## Carry-forward: how data survives between checkpoints
 
@@ -347,8 +382,11 @@ loop's memory between stages.
   (automated test / headless assertion / **manual or user acceptance** for
   anything the environment couldn't execute — stated as such, never faked).
 - Reconcile the deviation registry back into the spec/contract as errata.
-- Write the closeout doc: acceptance check-off, known limitations (recorded, not
-  hidden), items explicitly deferred to a future milestone.
+- Deliver the closeout summary: acceptance check-off, known limitations and
+  explicitly deferred work. Use the agreed closeout document if one is a required
+  deliverable; otherwise use the conversation or PR, not a new report file.
+- Albus verifies temporary-artifact cleanup again after the last reviewer or UI
+  walkthrough finishes, before handing the workspace back.
 - The residual risk the automated nets can't catch is handled by *naming it
   explicitly*, not by pretending it's covered.
 
@@ -360,8 +398,8 @@ loop's memory between stages.
   this work.
 - **A fresh agent per checkpoint.** Respawning Harry or Severus each round is
   amnesia by another name — the accumulated memory the roles exist to build is
-  thrown away. Spawn once, continue the same agent; rehydrate from the plan doc
-  only when a session break forces it.
+  thrown away. Create once per parent session, then continue the same agent;
+  rehydrate a new cast from the plan only in a genuinely new parent session.
 - **Severus takes the gate on faith — or builds anything at all.** Both are
   wrong. A bare claim is never enough: audit the evidence (command, raw output,
   tree-state stamp, scope). And a suite rerun on an unchanged tree verifies the

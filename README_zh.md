@@ -16,16 +16,27 @@
 | 能力 | 形态 | 位置 |
 | --- | --- | --- |
 | 循环方法论 + 每个角色的详细职责 | `hogwarts-loop` skill（也可用 `/hogwarts-loop` 手动触发） | `skill/SKILL.md`、`skill/references/*.md` |
-| 按角色派发子代理，并强制走该角色配置的模型 | `hogwarts_dispatch` 工具 | 由 `index.js` 注册 |
+| 同一父会话内按角色创建或继续原子代理 | `hogwarts_dispatch` 工具 | 由 `index.js` 注册 |
 | 按角色编辑 provider / 模型 / 推理强度 / 输出上限 | **设置 → 霍格沃茨循环**，以及 Plugins 页里本插件那一行的 Configure | `client.js`（浏览器半边） |
 
 ```jsonc
-// 一次调用 = 一个角色 = 该角色配置的模型
-hogwarts_dispatch({ role: "harry",   description: "checkpoint 3 build",  prompt: "…完整简报…" })
-hogwarts_dispatch({ role: "severus", description: "review checkpoint 3", prompt: "…完整简报…" })
+// 首次创建 Harry；CP1 通过后，再次调用会继续原来的 Harry。
+hogwarts_dispatch({ role: "harry", description: "CP1 build", prompt: "…首次简报…" })
+hogwarts_dispatch({ role: "harry", description: "CP2 build", prompt: "…下一项简报…" })
 ```
 
-`hogwarts_dispatch` 立刻返回 child id，**不等待**结果；子代理的产出会以完成通知（completion notice）的形式回到主会话。
+**同一父 session，每个角色只有一个子会话。** 跨 CP 和修复轮次保持相同 `childId`；改变 `description`、完成 CP、进入 inactive 状态都不会新建 Harry。Harry 和 Severus 等不同角色各自保留独立上下文。派发不等待执行结束：收到该角色的报告后再安排下一个 CP；并发调用同一角色不等于多个并行工作者。
+
+插件重载、恢复同一父 session 后仍会找回原角色。恢复失败不会静默换人；旧历史中存在多个无法唯一确定的角色时会报错，不擅自选择。只有真正的新父 session 才创建新班底，并从计划文档恢复工作背景。
+
+返回结果区分 `started` 和 `continued`：创建时报告所用 provider/model，继续时返回已有 childId，不声称已经套用新默认模型。`cwd` 仅用于首次创建；后续调用携带非空 `cwd` 会被拒绝，请省略它以保留子代理已有的工作目录。列表标签保留首次 `description`，后续简报不会重新命名子代理。
+
+## 条件式消融
+
+技能要求 Harry 每次交付都报告复杂度；触发[消融规则](skill/references/ablation.md)后，
+先实际删除或替换设计单元做对照实验，不降低原验收标准，再验证组合后的最终版本，
+交给 Severus 审查证据。这是流程门禁，不是运行时自动扫描代码体量；直接手工派发会
+跳过技能的 checkpoint 纪律。阈值与计量口径只在上述规则中维护。
 
 ## 安装
 
@@ -71,7 +82,7 @@ plugin_manager -> { action: "remove_bundle", target: "@dyikai/dsh-hogwarts-loop"
 怎么确认它真的在干活：
 
 - 会话里出现 `hogwarts_dispatch` 的工具调用；
-- `list_agents` 能看到你派发的那位演员；
+- 同一角色的后续派发返回相同的 `childId`；
 - 子代理的会话日志里 `agentModel` 和 `config.model` 等于该角色配置的模型（例如 `harry` 是 `deepseek-flash`、`severus` 是 `deepseek-v4-pro`），而不是主会话的模型。
 
 ## 在客户端配置模型
@@ -82,7 +93,7 @@ plugin_manager -> { action: "remove_bundle", target: "@dyikai/dsh-hogwarts-loop"
 
 页面会列出每个演员，每个角色一行：**`Provider` 和 `模型` 都是下拉框**，选项来自 Host 的模型目录（`remote.session.modelCatalog()`，按 provider 分组）；切换 Provider 会自动把模型切到该 provider 下的第一项。`推理强度` 也是下拉框，选项按所选模型实际支持的档位生成（留空＝模型默认）；`最大输出 token` 可填可空。下方还有 `派发设置`（子代理后端、派发深度上限）。
 
-改完点 **保存** —— 所有改动作为一个原子、带版本栅栏的 `mutate` 写入当前 profile 的该条目，**下一次派发立即生效**，不需要重装、也不需要重启。
+改完点 **保存** —— 所有改动作为一个原子、带版本栅栏的 `mutate` 写入当前 profile 的该条目，**下一次创建新角色时生效**，不需要重装、也不需要重启。继续已有角色时保留原子会话，不套用新的创建默认值，也不会为了切换模型而换人。
 
 默认值（即没有覆盖时的行为）：
 
@@ -112,9 +123,9 @@ Voldemort 与 Harry **是完全相同的实现者**：同样的 checkpoint scope
 
 - 表单同时注册到 **设置面板** 的 `settings.section` 和 **Plugins 页** 的 `plugins.row.config`（key = `@dyikai/dsh-hogwarts-loop#hogwarts-loop`），两处渲染同一个 `FormBody`。
 - 设置面板那条通过共享的 `settings.describe` 镜像找到本插件条目的命名空间（按 `hogwarts-loop` 后缀匹配，兼容 `include:` 前缀），再用 `ctx.configForms.get(ns)` 取到带版本栅栏的写入入口；Plugins 页那条由页面直接把已绑定的 `form` 传进来，所以完全不用猜命名空间。
-- Host 侧导出的 `Config` 把 `delegation` / `roles` 两个**顶层对象**标成 `.volatile()`（schemastery 不允许 volatile 嵌套，引用只能落在对象上）：这既是设置服务把该条目视为「可编辑」并服务于设置面板的前提，也让派发时读到的永远是**当前值**，而不是插件激活那一刻的快照。
+- Host 侧导出的 `Config` 把 `delegation` / `roles` 两个**顶层对象**标成 `.volatile()`（schemastery 不允许 volatile 嵌套，引用只能落在对象上）：这既是设置服务把该条目视为「可编辑」并服务于设置面板的前提，也让新角色创建时读到的永远是**当前默认值**，而不是插件激活那一刻的快照。
 - 下拉框读不到模型目录时（例如登录态失效、目录请求失败），同一位置会退化成文本框，页面不会因此不可用。
-- 模型写错不会静默失败：`hogwarts_dispatch` 派发前先校验路由，错误直接作为工具错误返回，并列出当前已注册的 provider。
+- 创建角色时模型写错不会静默失败：`hogwarts_dispatch` 新建前先校验路由，错误直接作为可操作的工具错误返回。
 
 ## 验证真实路由
 
@@ -153,7 +164,7 @@ console.log(ev.find((e) => e.type === "request/header")?.data.header.config);
 ## 已知边界
 
 - 设置项是**插件自己注册的页面**（`settings.section`），不是 Host 根据 `Config` 自动生成的表单 —— 后者在本版本客户端还没有渲染器（`autoGenerate` 尚未被任何内置客户端消费）。
-- `hogwarts_dispatch` 用 `spawn`（全新子代理）派发。`fork` 类后端为了复用 KV cache 会继承父会话的路由，**不能**换模型，所以本插件不支持 `fork`。
+- 首次派发使用支持继续执行的 `spawn` 后端，后续派发继续原子会话。一次性后端无法满足持久角色约定；`fork` 类后端继承父会话路由，不能提供独立的角色模型选择。
 - `delegation.maxDepth` 默认 `1`：子代理不能再往下派发。
 - 子代理会加入父会话当前的 agent preset，沿用它那套工具。
 - 插件是 **profile 级** 的：装一次，该 profile 下所有会话都能看到 `hogwarts_dispatch` 和 `hogwarts-loop` 技能。

@@ -39,6 +39,11 @@ and repair separate preserves independence on the next round).
   suite, do not spin up simulators. Rerunning a green suite on an unchanged
   tree verifies the reporter, not the code, and every build a reviewer starts
   is cost the loop already paid once.
+- **Audit necessity as well as correctness.** Apply `ablation.md` to Harry's
+  complexity report: check thresholds, meaningful deletion experiments, unchanged
+  acceptance, rejected-variant restoration and the combined survivor's evidence.
+  Missing required evidence is P2, not an optional cleanup memo. Do not execute
+  experiments yourself; request the missing proof from Harry.
 - **Probe adversarially — walk the paths tests don't cover.** This is where real
   bugs are found. Ask: what input breaks this? The idle path (nothing happens for
   a while)? The empty case? The reentrant call (a callback that re-enters the
@@ -173,8 +178,9 @@ The panel decision is split, because neither party can make it alone:
 **The orchestrator supplies the lenses the diff cannot reveal.** Some risks are
 only visible from the plan: a constraint an earlier checkpoint's review
 established, a memo carried forward, an invariant recorded three checkpoints
-ago. A reviewer spawned fresh on this diff has no way to know they exist, so he
-cannot ask for them. These are mandatory, not suggestions.
+ago. Even a persistent reviewer may not have seen a constraint introduced in
+another role's work or in Albus's conversation. Include the relevant memos
+explicitly; these are mandatory, not suggestions.
 
 **Severus may request additional lenses, because he is the one who read the
 code.** After his triage pass he returns either a normal review report, or a

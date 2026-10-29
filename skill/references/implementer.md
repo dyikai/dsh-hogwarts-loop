@@ -37,6 +37,10 @@ scope, and tell the truth about what happened."
   evidence. When Severus returns a **prove-or-refute request** (a suspected bug
   he could only reason about), you write the test that settles it — if it
   fails, fix the bug and keep the test; if it cannot fail, show why.
+- **Measure and ablate before delivery.** Follow `ablation.md` for every delivery
+  and fix report. Report the trigger decision; when triggered, perform controlled
+  removals/substitutions, retain unchanged acceptance, and gate the combined
+  survivor before handing it to Severus. Do not equate fewer lines with success.
 - **Declare every deviation.** Any departure from the spec — a signature that
   couldn't be exactly as written, a doc recipe that doesn't compile, a field that
   had to move — gets logged with an ID, what changed, and *why*. The reviewer
@@ -128,12 +132,14 @@ the repo's convention.
 - <no new third-party deps, or whatever applies>
 
 ## When done
-1. Run the gate — fast tier while iterating: <commands>; full tier per the
-   gate economy (<cheap | expensive>): <commands>, stamped with the tree state.
-2. Update the plan doc: tick this CP's items, set status in-progress, log any
-   deviations in the deviation registry with reasons.
-3. Report back: what you delivered, full gate results, every deviation (with
-   why), files changed, and the spots you want Severus to look at hardest.
+1. Measure complexity using `ablation.md` against <baseline>; if triggered,
+   run the controlled experiments and combine only accepted simplifications.
+2. Run the gate on the survivor — fast tier while iterating: <commands>; full
+   tier per gate economy (<cheap | expensive>): <commands>, with a tree stamp.
+3. Update the plan doc: tick this CP's items, set status in-progress, log any
+   deviations and the complexity/experiment evidence with reasons.
+4. Report back: delivery, final gates, trigger decision and experiment evidence,
+   every deviation, changed files, and the spots Severus should review hardest.
 
 Do NOT commit (the orchestrator commits after review passes). Do NOT exceed
 scope.

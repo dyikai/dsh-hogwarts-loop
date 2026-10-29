@@ -16,16 +16,29 @@
 | Capability | Form | Where it lives |
 | --- | --- | --- |
 | The loop methodology and each role's detailed duties | the `hogwarts-loop` skill (also triggerable as `/hogwarts-loop`) | `skill/SKILL.md`, `skill/references/*.md` |
-| Start one cast member on that role's configured model | the `hogwarts_dispatch` tool | registered by `index.js` |
+| Create or continue the same cast member within a parent session | the `hogwarts_dispatch` tool | registered by `index.js` |
 | Edit provider / model / effort / output cap per role | **Settings → Hogwarts Loop**, plus the Plugins page row for this plugin | `client.js` (browser half) |
 
 ```jsonc
-// one call = one role = that role's configured model
-hogwarts_dispatch({ role: "harry",   description: "checkpoint 3 build",  prompt: "<full brief>" })
-hogwarts_dispatch({ role: "severus", description: "review checkpoint 3", prompt: "<full brief>" })
+// First call creates Harry; after CP1 passes, the next call continues him.
+hogwarts_dispatch({ role: "harry", description: "CP1 build", prompt: "<first brief>" })
+hogwarts_dispatch({ role: "harry", description: "CP2 build", prompt: "<next brief>" })
 ```
 
-`hogwarts_dispatch` returns a child id immediately and does **not** wait. The child's result arrives later as a completion notice in the main session.
+**One parent session, one child per role.** Checkpoints and fix rounds keep the same `childId`; changing `description`, completing a CP, or becoming inactive does not create a new Harry. Each role is independent, so Harry and Severus retain separate histories. Dispatch is nonblocking: wait for a role's report before assigning its next CP; concurrent calls to that role do not create parallel workers.
+
+Bindings survive plugin reload and resuming the same parent session. A continuation failure never silently creates a replacement. Older histories with ambiguous role bindings require intervention instead of guessing. A genuinely new parent session starts its own cast, rehydrated from the plan.
+
+Results distinguish `started` from `continued`. Creation reports the configured provider/model; continuation identifies the existing child rather than claiming it uses newly edited defaults. `cwd` is creation-only: a non-empty `cwd` on a later call is rejected. Omit it to preserve the child's established working directory. The roster label keeps the first `description`; later briefs do not relabel the child.
+
+## Conditional ablation
+
+The skill requires a complexity report on every Harry delivery. When the
+[ablation policy](skill/references/ablation.md) triggers, Harry runs controlled
+removal/substitution experiments without weakening acceptance, verifies the
+combined survivor, and gives Severus the evidence to audit. This is a workflow
+gate, not a runtime code-size scanner; direct manual dispatch skips the skill's
+checkpoint discipline. Thresholds and counting rules have one canonical home.
 
 ## Install
 
@@ -71,7 +84,7 @@ Three ways in:
 How to tell it is really working:
 
 - a `hogwarts_dispatch` tool call shows up in the session;
-- `list_agents` lists the cast member you dispatched;
+- repeated dispatches to the same role return the same `childId`;
 - the child's session log records `agentModel` and `config.model` equal to that role's configured route (for example `harry` on `deepseek-flash`, `severus` on `deepseek-v4-pro`), not the main session's model.
 
 ## Configure the cast
@@ -82,7 +95,7 @@ The same form has a second entry point: **Plugins → Installed plugins → `@dy
 
 The page lists every cast member, one row each: **provider** and **model** are dropdowns fed by the host's model catalog (`remote.session.modelCatalog()`, grouped per provider); switching the provider switches the model to that provider's first entry. **Reasoning effort** is a dropdown built from the levels the selected model actually supports (blank = the model default), and the **max output tokens** field may be left empty. Below them, **Dispatch settings** holds the subagent backend and the delegation depth cap.
 
-Save writes every change as a single atomic, version-fenced `mutate` to this plugin's row in the current profile. **The next dispatch uses it immediately** — no reinstall and no restart.
+Save writes every change as a single atomic, version-fenced `mutate` to this plugin's row in the current profile. **The next newly created role uses it** — no reinstall and no restart. Continuing an existing role preserves its child session and does not apply new creation defaults or replace it to switch models.
 
 Defaults (the behaviour when nothing is overridden):
 
@@ -112,9 +125,9 @@ These two numbers live in the *Escalation* section of [skill/SKILL.md](https://g
 
 - The form registers twice — in the settings panel's `settings.section` and in the Plugins page's `plugins.row.config` (key `@dyikai/dsh-hogwarts-loop#hogwarts-loop`) — and both render the same `FormBody`.
 - The settings-panel entry resolves this plugin's namespace through the shared `settings.describe` mirror (matching the `hogwarts-loop` suffix, so an `include:` prefix still works) and then gets a version-fenced write handle via `ctx.configForms.get(ns)`. The Plugins entry receives the bound `form` directly from the page, so it never has to guess a namespace.
-- On the host side, `Config` marks the two top-level objects `delegation` and `roles` as `.volatile()` (schemastery cannot nest volatile, so the reference has to sit on the object). That is both what makes the settings service treat the entry as editable and serve the settings panel, and what guarantees dispatch reads the **current** value rather than a snapshot taken when the plugin activated.
+- On the host side, `Config` marks the two top-level objects `delegation` and `roles` as `.volatile()` (schemastery cannot nest volatile, so the reference has to sit on the object). That is both what makes the settings service treat the entry as editable and serve the settings panel, and what guarantees new role creation reads the **current** defaults rather than a snapshot taken when the plugin activated.
 - When the model catalog cannot be read (expired login, failed catalog request), the same fields fall back to text inputs instead of breaking the page.
-- A wrong model is never a silent failure: `hogwarts_dispatch` validates the route before dispatching, and returns the error as a tool error with the list of currently registered providers.
+- A wrong creation-time model is never a silent failure: `hogwarts_dispatch` validates the route before creating a role and returns an actionable tool error.
 
 ## Verify the routing
 
@@ -153,7 +166,7 @@ Expect `agentModel` / `config.model` to equal that role's configured model.
 ## Known limits
 
 - The settings entry is a **page the plugin registers itself** (`settings.section`), not a form the host auto-generates from `Config` — that renderer does not exist in this client version yet (`autoGenerate` is not consumed by any built-in client).
-- `hogwarts_dispatch` dispatches with `spawn` (a fresh subagent). `fork`-style backends inherit the parent session's route to reuse the KV cache and therefore **cannot** retarget the model, so this plugin does not support `fork`.
+- The first dispatch uses a continuable `spawn` backend; later dispatches resume that child. One-shot backends cannot satisfy the persistent-role contract. `fork`-style backends inherit the parent's route and cannot provide independent per-role model selection.
 - `delegation.maxDepth` defaults to `1`: a child cannot dispatch further down.
 - Children join the parent session's current agent preset and use its tools.
 - The plugin is **profile-level**: install it once and every session in this profile sees `hogwarts_dispatch` and the `hogwarts-loop` skill.

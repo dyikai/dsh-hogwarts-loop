@@ -19,33 +19,38 @@ the work, Severus scrutinizes it.)
 
 ### Dispatch in this harness
 
-Every cast member is a managed subagent started with the **`hogwarts_dispatch`**
-tool, never with the built-in `subagent` / `subagent_fork` / `spawn_teammate`
-tools. Each role runs on its own configured LLM route, so the tool — not the
-model — decides which model does the work:
+Use **`hogwarts_dispatch`** for both first dispatch and every later brief to a
+cast member, never `subagent` / `subagent_fork` / `spawn_teammate` as a replacement.
+**One parent session has one child per role.** The first call creates the child
+on that role's configured model; later calls continue the same child and its
+conversation, across checkpoints as well as fix→re-review rounds.
 
 ```
-hogwarts_dispatch({ role: 'harry', description: '<checkpoint id>', prompt: '<full brief>' })
-hogwarts_dispatch({ role: 'severus', description: 'review <checkpoint id>', prompt: '<full brief>' })
+hogwarts_dispatch({ role: 'harry', description: 'CP1 build', prompt: '<first brief>' })
+// After CP1 passes: same Harry, same childId, not a new implementer.
+hogwarts_dispatch({ role: 'harry', description: 'CP2 build', prompt: '<next brief>' })
 ```
 
 Rules of dispatch:
 
-- `prompt` is the **entire** brief. The child does not see this conversation, so
-  restate the spec, the repo convention, the checkpoint scope, the gates, and
-  every constraint it must honor.
-- The call returns a child id immediately and does **not** wait. The child's
-  result arrives later as a completion notice; keep working on independent steps
-  and never sleep or poll for it.
-- Start independent delegations (for example one Harry per disjoint checkpoint,
-  or the specialist bench together) in one assistant message.
-- The cast and their live model routes are listed below. Report the route you
-  used when a checkpoint matters, so a reviewer's independence is auditable.
+- The first `prompt` includes the role instructions, scope, spec references,
+  conventions, gates, and constraints. Later briefs give the next scope or
+  findings and changed constraints; the child retains its own history but does
+  not automatically see Albus's conversation.
+- CP completion, an idle/inactive child, context compaction, and returning from
+  a Voldemort escalation are **not** reasons to create another Harry.
+- Dispatch is nonblocking. Wait for the relevant delivery before assigning that
+  role another checkpoint; simultaneous briefs to one role are not independent
+  workers. Different review roles may run in parallel.
+- Set `cwd` only on first creation. Omit it on subsequent calls, which preserve
+  the child's established working directory.
+- A continuation error is a blocker to diagnose, not permission to bypass the
+  binding with another tool. Resume the existing child; do not silently replace
+  it. A genuinely new parent session starts a new cast, briefed from the plan.
 
-The `hogwarts_dispatch` tool's schema carries the authoritative cast: every
-configured role and its seat. Each role's model is configured per profile in
-**Settings → Hogwarts Loop** (the same form also opens from the bundle row on the
-Plugins page), and every dispatch reports the route it actually used.
+The tool schema lists the authoritative cast. Configure creation-time model
+routes in **Settings → Hogwarts Loop** (also available from the Plugins row).
+Changing defaults does not replace an existing role's child or reset its memory.
 
 ### Why this pattern earns its cost
 
@@ -83,6 +88,8 @@ to this loop, not its job).
   loop: dispatch each stage, judge pass/fail, commit on pass, carry memos and
   deviations forward. You are the only one who commits, and you never write the
   feature code — that separation keeps your judgment uncontaminated by authorship.
+  You also own post-review cleanup: remove this run's temporary artifacts before
+  advancing or replying, without waiting for the user (`references/loop.md`).
 - **Implementer — Harry.** Builds one checkpoint to spec, runs the gates (all
   build/test execution is his and happens during development — every test the
   checkpoint needs is written, built and run before delivery; a red gate never
@@ -104,11 +111,20 @@ to this loop, not its job).
   for **one unresolved problem**, never for the implementer's remaining work
   (see *Escalation* below). His work is still reviewed by Severus.
 
-Keep every role as a **distinct subagent with persistent context** so each
-accumulates project memory across checkpoints: dispatch Harry and Severus once
-per checkpoint, then continue the *same* children for the fix→re-review loop
-instead of starting fresh agents. When a session break loses the context,
-rehydrate a new subagent from the plan doc.
+Keep every role as a **distinct subagent with persistent context** across the
+whole parent session. Each checkpoint is a new assignment, not a new agent.
+Harry and Severus keep the same childIds for subsequent checkpoints and
+fix→re-review rounds. The plan doc supplements their memory and bootstraps a
+new cast only when work moves to a genuinely new parent session.
+
+### Simplify large deliveries before review
+
+Harry measures every delivery and fix report against the conditional gate in
+**`references/ablation.md`**. When triggered, he runs controlled deletion or
+substitution experiments before the final gate; acceptance must not weaken.
+Albus rejects missing evidence, and Severus audits the experiments with the code.
+A successful review is not a substitute for this check. Load the reference when
+planning gates, preparing a delivery, or auditing its complexity report.
 
 ### Escalation: Voldemort
 
