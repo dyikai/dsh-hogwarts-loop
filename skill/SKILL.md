@@ -17,6 +17,10 @@ dispatch, judge, and commit, but you never write the feature code yourself. (The
 cast is a mnemonic: Albus/Dumbledore plans and orchestrates from above, Harry does
 the work, Severus scrutinizes it.)
 
+This is a multi-agent mode, not a requirement to delegate every task. If the user
+asks for personal execution or forbids subagents, work directly outside this loop
+and do not claim independent review.
+
 ### Dispatch in this harness
 
 Use **`hogwarts_dispatch`** for both first dispatch and every later brief to a
@@ -93,8 +97,9 @@ to this loop, not its job).
   commit code/tests on pass, carry memos and deviations forward. You are the only
   one who commits, and you never write the feature code — that separation keeps
   your judgment uncontaminated by authorship. You also own post-review cleanup:
-  remove this run's temporary artifacts before advancing or replying, without
-  waiting for the user (`references/loop.md`).
+  remove obsolete task-owned artifacts before advancing or replying, retaining
+  active plans and carry-forward state until their consumers finish. Transfer
+  required handoff/resume state before final root cleanup (`references/loop.md`).
 - **Implementer — Harry.** Builds one checkpoint to spec, runs the gates (all
   build/test execution is his and happens during development — every test the
   checkpoint needs is written, built and run before delivery; a red gate never
@@ -175,59 +180,25 @@ widen the checkpoint scope to make it pass.
 
 These are **same-root attempt limits**. They are separate from the
 checkpoint-wide convergence cap below: one counts attempts on a problem, the
-other counts completed review/response cycles for a checkpoint. Neither resets
+other bounds complete repair/re-review rounds and evidence batches. Neither resets
 the other, and a cap hit is never a reason to escalate without same-root failure
 evidence.
 
-### Review findings and the checkpoint cap
+### Review discipline
 
-Canonical definitions live in **`references/review-contract.md`**. Keep three
-axes distinct instead of collapsing them into "fixed":
+Use **`references/review-contract.md`** for the operational rules:
+- Report a concrete failure and the guard checked, not speculative concerns.
+- Albus batch-validates blocking candidates; complete static proof is enough.
+  Execution-only questions go to Harry, and the independent reviewer closes fixes.
+- Count complete repair/re-review rounds, not messages. Evidence-only work has a
+  separate finite budget; a successful probe plus repair is not two repair rounds.
+- Default to Severus alone. Add a specialist for a material risk or unresolved
+  question the existing review has not covered (`references/reviewer.md`).
+- Honor required human approvals; do not invent new signoff forms for routine work.
 
-- **severity** — P1 blocking correctness, P2 blocking should-fix, P3 non-blocking;
-- **evidence status** — `candidate`, `confirmed`, `refuted`, `needs-evidence`;
-- **disposition** — fix-required, waived-P2, carry-P3, closed-refuted,
-  closed-fixed, routed-out-of-scope, blocked-needs-evidence.
-
-Every blocking finding carries a stable ID, source snapshot, provenance
-(pre-existing / CP-introduced / repair-introduced), trigger/input, file:line,
-causal chain, the existing guard or counterexample checked, validation
-owner/evidence, and a closure reason. **Albus batch-validates all blocking and
-security candidates in one non-origin pass between the review report and the
-fix relay** — no per-finding agent, no silent approval. A complete static
-code/data-flow chain can confirm; if execution is truly required, E authorizes
-evidence collection before repair, not an unconfirmed fix. A confirmed P1 is never
-waived; a P2 waiver is explicit and attributed; P3s are carried, not auto-fixed.
-
-**After three completed review/response cycles without resolution, stop the
-automatic next iteration.** Reassess approach, scope, and reviewer churn, and
-record an explicit decision: stop/report or a bounded, human-authorized
-continuation with preserved counters. Never auto-reset the counter by
-re-scoping, renaming, swapping reviewers, or escalating. Newly discovered
-serious issues are still triaged and routed at the cap — never dropped to make
-the number.
-
-### Security triage, human approval, and evaluation
-
-- **Every checkpoint gets a lightweight security triage.** A named sensitive
-  surface (permissions/authz, secrets, untrusted input, CI/release/install,
-  crypto, PII, external trust boundaries) requires the scoped security lens
-  (Alastor), not merely Severus deciding to ask.
-- **The plan carries a risk field:** boundary → evidence → owner → budget/stop,
-  plus a named human approver where policy, irreversibility, release, deployment
-  or migration requires one, and a rollback owner. Agents, model consensus, and
-  green gates do not replace a required human approval; the user asking for the
-  work is not automatically the final signoff.
-- **Feedback is lightweight and honest** (`references/evaluation.md`): outcome
-  counts, cycles, and measured cost when available, plus escaped defects. The
-  synthetic seeds under `assets/` are clearly labelled examples, not historical
-  incidents and not a measured score. Do not claim reviewer improvement without
-  running the comparison on the same frozen snapshot with non-treatment
-  variables held equal and the intentional prompt/model/tool/config change
-  recorded.
-- These rules are **textual workflow policy, not tool ACLs or approval
-  machinery**. The host must enforce permissions and approvals; direct manual
-  dispatch can bypass the skill discipline.
+The limits are workflow instructions, not host permissions or runtime enforcement.
+`references/evaluation.md` describes a small controlled comparison; neither these
+instructions nor passing unit tests demonstrate better review outcomes.
 
 ### Build once, in development
 
@@ -264,7 +235,7 @@ read — or paste into a child's brief — the file for the role you are dispatc
 - **`references/review-contract.md`** — the canonical finding record and
   lifecycle (severity / evidence status / disposition), batch validation, the
   prove-or-refute evidence standard, stable IDs and class-of-bug handling, and
-  the checkpoint-wide three-cycle convergence cap with its escalation precedence.
+  the separate repair-round and evidence budgets, including escalation precedence.
 - **`references/loop.md`** — the per-checkpoint state machine, the data handoff
   between Albus, Harry, and Severus, and the transport mechanics for continuing
   the same children across rounds.
@@ -277,6 +248,8 @@ read — or paste into a child's brief — the file for the role you are dispatc
   storage/retention decision, risk/approval, review-ledger and convergence
   fields). The template is a product asset; each run's filled plan is not
   committed by default.
-- **`assets/eval-inputs.md` / `assets/eval-expectations.md`** — synthetic seed
-  targets and their answers; keep them separate and never paste the expectations
-  into a reviewer brief.
+- **`assets/eval-inputs.md` / `assets/eval-expectations.md`** — synthetic smoke cases.
+- **`assets/eval-legacy-inputs.md` / `assets/eval-legacy-expectations.md`** — a
+  repository-derived before/after pair and staged closure replay, with provenance
+  and a full-loop variant. Keep all scoring material and unreleased snapshots
+  outside the evaluated agents' accessible context; never paste answers into briefs.

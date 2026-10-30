@@ -58,15 +58,10 @@ state being committed (see Gate economy below).
 Before review, every delivery must also satisfy the conditional complexity and
 ablation gate in `ablation.md`; missing required experiments are not review-ready.
 
-Two review-governance rules sit between the letters in the diagram. First,
-between **D** and **E**, Albus batch-validates every blocking P1/P2 candidate and
-every security candidate (confirm/refute/needs-evidence) before relaying a repair
-order; one batch, not one agent per finding (`review-contract.md`). Second, after
-**three completed review/response cycles** with blocking findings unresolved the
-checkpoint stops automatic iteration; Albus records an explicit reassessment
-decision with preserved counters. That checkpoint-wide cap is separate from the
-same-root Harry/Voldemort attempt limits in `SKILL.md`; neither limit resets the
-other.
+`review-contract.md` owns validation, closure and budgets. Albus validates candidates
+between D and E; Harry executes probes and repairs. Count a repair round only
+when the author response receives its re-review verdict. Evidence-only batches
+use a separate finite allowance; neither budget resets same-root attempt counts.
 
 ## The handoff payloads
 
@@ -90,11 +85,6 @@ Full template in `implementer.md`.
 - Files changed / added.
 - Complexity measurements and trigger ruling; when triggered, experiment artifacts,
   keep/revert decisions and combined-survivor evidence (`ablation.md`).
-- Opening cycle count and, if any earlier round on this checkpoint ran, the
-  current convergence-cap state (preserved, never reset).
-- Lightweight feedback fields when known: findings by severity/evidence status,
-  escaped defects, and measured time/token cost — "unavailable" if not measured
-  (`evaluation.md`).
 - Self-flagged risk spots ("review this hardest").
 - Temporary-artifact inventory: exact paths owned by this run, for Albus's cleanup.
 - Confirmation: not committed, stayed in scope.
@@ -105,9 +95,9 @@ Full template in `implementer.md`.
 - How to see the diff + the baseline commit (only the unpassed changes).
 - Spec sections to check against.
 - Harry's declared deviation list (for rulings) and complexity/ablation evidence.
-- The current review/response cycle number against the convergence cap, and any
+- The current repair-round/evidence counts, and any
   reassessment decision in force.
-- Named sensitive surfaces for the security triage, plus the plan's risk/approval
+- Material security changes or missing coverage, plus any applicable risk/approval
   and rollback fields (`review-contract.md`, `reviewer.md`).
 - Focus areas, highest-risk-first.
 Full template in `reviewer.md`.
@@ -119,76 +109,38 @@ settled and reported alongside.
 - Which specialists, named.
 - **Per specialist: the exact point he cannot settle**, not a risk adjective.
 - What he already ruled on, so the panel does not redo it.
-The orchestrator approves, trims for budget, and adds any lens the diff cannot
-reveal (plan-derived constraints) plus — where the verdict rests on Severus's
-own reading — a **claim refuter** aimed at that conclusion. Then the panel runs
-and returns D. A claim refuter is a bounded challenge to one conclusion, not a
-coverage re-run (`reviewer.md`).
+The orchestrator approves or trims for budget, including plan-derived constraints.
+Albus first tries to settle unsupported claims in validation; add a claim refuter
+only for a consequential question that remains unresolved. Any added lens returns
+its scoped result for D, not a second full review (`reviewer.md`).
 
 ### D — Severus → orchestrator: *review report*
-- Verdict: APPROVE or REQUEST-CHANGES.
-- Findings, each with a stable ID, [P1 / P2 / P3] severity, evidence status
-  (`candidate` / `confirmed` / `refuted` / `needs-evidence`), disposition,
-  provenance, source snapshot, file:line, concrete failure scenario, the guard
-  checked, and a suggested fix.
-- A ruling on each declared deviation (accept/reject + reason).
-- Gate verification results (ran / audited) — and, honestly, what was only
-  static-analyzed, plus the prove-or-refute requests handed to Harry.
-- Security triage result (named sensitive surfaces, or "none") and the current
-  review/response cycle number.
-- On APPROVE: downstream memos for later checkpoints.
+- Verdict, reviewed snapshot, and concrete findings/closure evidence by stable ID.
+- Deviation rulings, audited gate evidence, and unresolved evidence/coverage gaps.
+- On APPROVE: useful downstream memos.
 
-### D→E — orchestrator: *batch validation* (mandatory before relay)
-- One batch validation of every blocking P1/P2 candidate and every security
-  candidate, by Albus or another reviewer who did not originate it. Never one
-  agent per finding.
-- Per finding: confirmed / refuted / needs-evidence. A complete deterministic
-  code/data-flow chain re-derived by the validator with the guard checked
-  confirms statically; no execution is required just because the finding is in
-  code.
-- If execution is truly required, `needs-evidence` names an owner, the next
-  evidence step, and the explicit blocking/risk route. E may authorize
-  **evidence collection only**, not repair. Harry returns the unchanged pre-fix
-  red test on the reviewed snapshot with raw output + pre-fix stamp; the
-  non-origin validator checks the oracle/entrypoint and confirms or refutes.
-  This bounded handoff is not a second full review and not a repair, but the
-  **pre-fix evidence report consumes one review/response cycle** exactly like a
-  fix, and the later repair response consumes another. Batch evidence requests
-  for all candidates into that one report; informational progress/tool logs do
-  not each count. Three unresolved evidence-only responses with no code change
-  reach the same stop/reassess rule — there is no evidence-only exemption.
-- A zero-confirmed P1/P2 report with open required verification is still
-  blocked.
-- The batch result is recorded in the plan's review ledger. Only confirmed
-  blocking findings and open evidence routes move to edge E.
+### D→E — orchestrator: *validation*
+Batch-check blocking and security candidates using `review-contract.md`. Record
+who checked each disputed claim and why it was confirmed, refuted or left open.
+Static proof can suffice. An execution-only question authorizes a bounded evidence
+batch, not an unconfirmed repair. Preserve the evidence count across repair rounds.
 
-### E — orchestrator → Harry: *findings relay*
-- The confirmed P1/P2 findings to fix (P3s are recorded, not blocking), each by
-  stable ID with the record and proposed evidence.
-- Confirmed `refuted` findings are closed, not repaired.
-- Any `needs-evidence` item with its owner, next step, and blocking/risk route —
-  evidence collection only until the non-origin validator confirms it.
-- Which deviations were rejected and must change.
-- Any orchestrator decision on contested points, and the convergence-cap state
-  when the reassessment decision applies.
+### E — orchestrator → Harry: *bounded request*
+- Confirmed defects to fix, by ID; or explicitly evidence-only questions.
+- Required proof, scope, and any rejected deviation or adjudication.
+- Remaining repair/evidence budgets and any human-authorized extension.
 
-### F — Harry → orchestrator: *fix report*
-- Per-finding, by stable ID: what the fix was and a **proposed** disposition —
-  not a self-closed one; independent re-review closes it.
-- For a repro-route finding: the unchanged test's pre-fix red evidence (raw
-  output + pre-fix stamp) was returned for confirmation **before repair**, and
-  the post-fix green evidence (raw output + fixed stamp) is returned here. For a
-  static-route finding: fixed-state source and gate evidence; no test is
-  required solely because the finding was in code.
-- The new tests added to lock each bug against recurrence.
-- Reran the gate per the gate economy (cheap mode: the whole gate, not just the
-  touched module; expensive mode: the fast gate — the one final full gate lands
-  before commit).
-- Incremental complexity since the last validated ablation (or checkpoint start);
-  any newly triggered experiments and their final-survivor evidence.
-- Any `needs-evidence` item that remains open, with the next step — never
-  reported as passed; and the updated cycle count.
-Then loop back to edge C for Severus's re-review.
+### F — Harry → orchestrator: *response*
+- For a repair: changes by ID, relevant regression/gate evidence and final stamp;
+  include unchanged-test red/green evidence when a repro was required.
+- For an evidence-only request: results on the reviewed snapshot, including failures
+  to settle the question. Albus validates these before authorizing repair.
+- Complexity/ablation delta, unresolved items and task-owned temporary paths.
+
+A fix report proposes closure; it never self-closes. Send repairs back through C
+for independent re-review and count the completed round then. Evidence-only results
+consume their own allowance, not a repair round. Always obtain the closure verdict
+for an already delivered repair; apply the stop rule before further author work.
 
 ## Transport — how the edges physically run
 
@@ -344,13 +296,10 @@ duplicating the review. Neither is the validation batch: that is one read-only
 pass over all blocking candidates between D and E, done by one non-origin
 validator (`review-contract.md`), not a panel.
 
-**Bound total churn as well as panel size.** Even a correctly sized sequence of
-rounds can stop converging. The checkpoint-wide cap — three completed
-review/response cycles, then an explicit reassessment with preserved counters —
-is the backstop (`review-contract.md`). Hitting it is not permission to dispatch
-a bigger panel or an escalation; escalation still needs same-root failure
-evidence.
-
+**Bound author work, not message count.** `review-contract.md` limits completed
+repair/re-review rounds and evidence-only batches separately. Re-review a delivered
+repair before applying the stop rule; a limit does not authorize a bigger panel
+or reset same-root escalation attempts.
 **Budget the loss when a fan-out dies.** A phase whose agents all fail together
 (rate limit, API error) usually caches nothing — the whole spend is gone.
 On a long run, prefer several smaller convenings over one giant one, and treat a
@@ -418,11 +367,9 @@ Its storage is an explicit plan-time decision (`assets/plan-template.md`):
   (edge F) → Severus re-reviews (edge C). Never advance with an open confirmed
   P1/P2, an unresolved blocking `needs-evidence`, or a required human approval
   replaced by consensus.
-- **Before another automatic cycle:** update the cycle counter. At three completed
-  review/response cycles without resolution, stop and record the explicit
-  reassessment decision (approach/scope/reviewer churn; bounded authorization or
-  stop) — do not start a fourth automatic cycle. New serious findings are still
-  triaged and routed, never dropped to hit the cap.
+- **Before more author work:** apply the separate repair-round and evidence
+  budgets in `review-contract.md`. Complete the verdict on an existing repair;
+  stop/reassess before exceeding a budget. Never suppress a new serious finding.
 - **APPROVE:** confirm the approval gate (`review-contract.md`) is satisfied —
   every candidate accounted for, gate green on the exact state, deviations ruled,
   P2 waivers attributed, no unresolved required verification. Albus completes
@@ -446,29 +393,32 @@ deliverables. Do not hide them behind new ignore rules either. A user-approved
 maintained roadmap/design document is the durable exception; explicit
 user-requested artifacts are the other.
 
-After Severus's final approval, and before committing, advancing or sending the
-final response, **Albus** must:
+After each checkpoint's approval, before committing or advancing, **Albus** must:
 
-1. Wait for every producer/consumer of those artifacts to finish. On
-   REQUEST-CHANGES, retain only evidence still needed for repair/re-review,
-   outside the workspace; remove superseded scratch work.
-2. Preserve a concise result, verification outcome and necessary carry-forward
-   decisions in the existing working plan, conversation or PR—not a new audit
-   bundle. Keep source, regression tests and agreed deliverables.
-3. Verify resolved absolute targets and ownership, then remove this run's
-   temporary files, including any workspace leftovers and its temporary root.
+1. Remove only superseded artifacts whose producers and consumers have finished.
+   Retain the active working plan, counters, unresolved findings, deviation registry
+   and downstream memos wherever they are stored, plus evidence still needed for
+   later checkpoints, repair/re-review or post-operation checks. A future reader
+   is still a consumer; checkpoint approval does not end the whole run.
+2. Preserve the concise result and verification outcome in the existing working
+   plan, conversation or PR—not a new audit bundle. Confirm the next checkpoint's
+   brief and carry-forward state remain readable after the proposed cleanup.
+3. Verify resolved absolute targets and ownership, then remove only the obsolete
+   task-owned files. Do not remove a temporary root containing active state.
    Never infer ownership from a filename or untracked status; never use blanket
-   `git clean`, resets, or unstaging to make the tree look clean. Preserve user
-   files, pre-existing changes and staging; ask if ownership/retention is unclear.
-4. Inspect the workspace and Git status against the starting state and intended
-   deliverables. Also verify the known temporary paths are gone. Cleanup must not
-   change reviewed code/config/tests; if it does, return to validation/review.
-   If cleanup is blocked, name the remaining paths and reason rather than
-   claiming closeout is complete.
+   `git clean`, resets, or unstaging. Preserve user files, pre-existing changes
+   and staging; ask if ownership/retention is unclear.
+4. Inspect workspace/Git status and verify the selected obsolete paths are gone
+   and retained state still exists. Cleanup must not change reviewed code/config/
+   tests; if it does, return to validation/review. Name blocked cleanup honestly.
 
-Apply the same ownership-safe cleanup when ending or cancelling a run. Keep
-needed evidence until its consumers finish, not indefinitely after review. This
-is Albus's closeout gate, not an optional suggestion for the user.
+At final closeout or cancellation, remove the task-owned temporary root only after
+all remaining consumers finish and necessary handoff/resume state has been copied
+to and read back from a surviving conversation/PR or approved durable document. The
+plan inside that same root is not a surviving destination. A pause or budget stop
+is not permission to discard unresolved findings or reset counters: retain their
+state or verify this transfer before deletion. Planned retention is not failed
+cleanup and does not make temporary plans Git deliverables.
 
 ## Carry-forward: how data survives between checkpoints
 
@@ -503,6 +453,10 @@ loop's memory between stages, not a default repository file.
   (automated test / headless assertion / **manual or user acceptance** for
   anything the environment couldn't execute — stated as such, never faked).
 - Reconcile the deviation registry back into the spec/contract as errata.
+- For an in-scope release/destructive migration, verify the operation handoff in
+  `reviewer.md`: record post-operation results, recovery actions and residual risk.
+  If another operator owns execution, hand off the named checks and recovery plan
+  with results marked pending; code APPROVE is not operational verification.
 - Deliver the closeout summary: acceptance check-off, known limitations and
   explicitly deferred work. Use the agreed closeout document if one is a required
   deliverable; otherwise use the conversation or PR, not a new report file.
@@ -550,7 +504,7 @@ loop's memory between stages, not a default repository file.
   can send Harry to fix a non-defect.
 - **One validator per finding.** "Independent validation" does not mean spawning
   an agent for every finding; that is the fan-out cost with none of the coverage.
-- **Treating review rounds as progress.** Three completed cycles with the same
+- **Treating review rounds as progress.** Three completed repair/re-review rounds with the same
   blocking findings is a signal to reassess, not to queue a fourth automatic
   round. Re-scoping or renaming the same work to reset the counter is the
   auto-reset loophole.

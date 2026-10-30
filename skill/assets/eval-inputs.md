@@ -8,12 +8,10 @@
 > answers belong on the scoring side. All cases are deliberately short so one
 > evaluator can score them by hand.
 
-For each case, act as the **reporting reviewer**: produce findings with stable
-IDs, severity, evidence status, disposition, the required record fields, and the
-next evidence step. Report a new finding as `candidate` unless the case itself
-states it is already independently confirmed; confirmation and closure are
-separate stages (`review-contract.md`). Do not edit code and do not run builds or
-tests.
+For E1–E4, act as the **reporting reviewer**. Give concrete findings, guards checked
+and any evidence still needed; distinguish a new candidate from an already
+confirmed finding. Do not edit code or run tests. E5 asks for the orchestrator's
+next decision, not a new code review. These are smoke cases, not a full-loop run.
 
 ## E1 — Tenant cache
 
@@ -103,8 +101,8 @@ export async function save(file) {
 }
 ```
 
-A finding reported that a failed `write` leaves the handle open, so the repair
-changed it to:
+The prior independently confirmed finding `F-save-close` (P2) says a failed
+`write` leaves the handle open. The author claims this repair fixes it:
 
 ```js
 export async function save(file) {
@@ -120,17 +118,19 @@ export async function save(file) {
 Callers treat a normal return as a successful save. Review the repair increment
 and the affected path, not the rest of the module.
 
-## E5 — Third cycle
+## E5 — Next action
 
-One checkpoint has completed three review/response cycles:
+Treat these as three independent checkpoint histories, using the default budgets:
 
-- cycle 1: F1 (`P2`) confirmed and fixed;
-- cycle 2: F2 (`P2`) confirmed and fixed, F3 (`P3`) recorded;
-- cycle 3: F4 (`P1`, security) confirmed on the new repair path; the verdict is
-  still REQUEST-CHANGES;
-- the same "error handling" root has now had three Harry attempts and the third
-  attempt still has an open blocking finding.
+- **A:** Three author repairs each received an independent re-review. The same
+  confirmed P1 authorization defect `F-auth` remains open after the third verdict.
+  Harry has failed three implementation attempts on that root. No evidence-only
+  batches have been needed; Voldemort has not been used.
+- **B:** One runtime defect used one evidence-only batch, then a successful repair
+  and re-review. That re-review found a different candidate whose scheduling
+  premise needs execution. No implementation attempt failed on the new root.
+- **C:** Two bounded evidence-only batches failed to settle a required timing
+  question. No repair has been attempted; the question still blocks acceptance.
 
-No approval has been issued. Review the next action. State the counters you
-would preserve, whether any automatic dispatch is allowed, what happens to F4,
-and whether escalation is available. Do not mark the checkpoint approved.
+For each history, give the current counters, next permitted action and any required
+approval. Explain whether escalation is applicable. Do not change the histories.

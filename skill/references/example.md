@@ -122,8 +122,9 @@ it.
   tree-state stamps — he runs nothing himself, per `loop.md`'s Gate economy),
   confirms the test exercises the previously-broken path (not another direct-call
   bypass), reuses the same finding ID, and closes it; APPROVE. The checkpoint
-  used **two** review/response cycles (the pre-fix evidence report and the repair
-  report), so the convergence cap is not in play.
+  used **one repair/re-review round and one evidence batch**. A second runtime
+  finding could still receive a bounded probe and repair; successful evidence
+  gathering did not consume an extra repair round.
 
 **The lesson, generalized:** green tests mean "what the author thought to test
 passed," not "the code is correct." The bugs that ship are the ones on the paths
@@ -132,28 +133,19 @@ call, the concurrent window. An independent reviewer whose job is to *find* thos
 paths is the mechanism that catches them. Everything else in this skill exists to
 support that one move.
 
-## The same bug as a finding record
+## A compact record
 
-Under the current contract, the example above would be recorded like this. This
-table is a **teaching reconstruction** of the same defect under the current
-`review-contract.md`, not a recovered historical record.
+Teaching reconstruction, not a historical transcript:
 
-| Field | Value |
-| --- | --- |
-| ID | `F-CP5-1` (reused on re-review; never renumbered) |
-| Severity | P1 — the gesture never accepts on its literal path |
-| Evidence | `candidate` at review → `needs-evidence` (repro authorized) → `confirmed` by a non-origin validator from the pre-fix red evidence → `closed-fixed` only after independent re-review of the fixed state and post-fix evidence |
-| Provenance | `cp-introduced` |
-| Trigger | press and hold, no further input, advance 500 ms |
-| Location | `recognizer.js:<timer callback>` → `frame-loop.js:<poll>` |
-| Chain | timer sets flag → no frame requested → arena not polled → never accepted |
-| Guard checked | the unit test bypasses the frame loop; no production guard |
-| Validation | non-origin batch marks needs-evidence and authorizes evidence collection; validator confirms from red; Severus re-reviews fix and green |
-| Closure | independent re-review + regression test retained; Harry's F report only proposed it |
+> **F-CP5-1 · P1** — recognizer timer → frame-loop poll. Hold for 500 ms with no
+> further input: timer sets the flag but requests no frame, so acceptance never
+> runs. The green unit test bypasses that path. Candidate → needs-evidence →
+> confirmed from Harry's red integration result → independently closed after the
+> unchanged test went green on the fixed tree. Keep both source stamps.
 
-If a checkpoint instead spends **three completed review/response cycles** with
+If a checkpoint instead spends **three completed repair/re-review rounds** with
 blocking findings still open, the loop stops automatic iteration and records the
 reassessment decision — the counters are preserved, new serious findings are
-still triaged, and a fourth automatic cycle is not queued. That cap is separate
+still triaged, and a fourth automatic repair is not queued. That cap is separate
 from the per-problem Harry/Voldemort attempt limits; the full precedence rule is
 in `review-contract.md`.

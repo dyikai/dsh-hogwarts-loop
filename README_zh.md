@@ -16,7 +16,7 @@
 | 能力 | 形态 | 位置 |
 | --- | --- | --- |
 | 循环方法论 + 每个角色的详细职责 | `hogwarts-loop` skill（也可用 `/hogwarts-loop` 手动触发） | `skill/SKILL.md`、`skill/references/*.md` |
-| 发现记录、批量验证、收敛上限与评估指南 | Markdown 契约 + 合成种子用例 | `skill/references/review-contract.md`、`skill/references/evaluation.md`、`skill/assets/eval-*.md` |
+| 发现记录、批量验证、收敛上限与评估指南 | Markdown 契约 + 合成及仓库来源用例 | `skill/references/review-contract.md`、`skill/references/evaluation.md`、`skill/assets/eval-*.md` |
 | 同一父会话内按角色创建或继续原子代理 | `hogwarts_dispatch` 工具 | 由 `index.js` 注册 |
 | 按角色编辑 provider / 模型 / 推理强度 / 输出上限 | **设置 → 霍格沃茨循环**，以及 Plugins 页里本插件那一行的 Configure | `client.js`（浏览器半边） |
 
@@ -39,39 +39,23 @@ hogwarts_dispatch({ role: "harry", description: "CP2 build", prompt: "…下一�
 交给 Severus 审查证据。这是流程门禁，不是运行时自动扫描代码体量；直接手工派发会
 跳过技能的 checkpoint 纪律。阈值与计量口径只在上述规则中维护。
 
-## 审查发现与收敛
+## 审查纪律
 
-审查行为是一套**文本化流程契约**，不是 Host 的权限机制。规范定义见
-[`skill/references/review-contract.md`](skill/references/review-contract.md)。
+[评审契约](skill/references/review-contract.md)保留几条核心规则：阻断候选先验证再修复，
+保留证据和稳定 ID，修复后独立验证，不反复重审已解决的问题。
+完整的“修复→复审”轮次与纯采证批次分别限额；正常取证不再多算一次修复轮次。
 
-- 每条发现分开记录**严重级**（P1/P2/P3）、**证据状态**
-  （`candidate` / `confirmed` / `refuted` / `needs-evidence`）与**处置**
-  （修复、显式豁免、结转、关闭、转出范围等），并带稳定 ID、来源快照、
-  provenance（既有 / 本 CP 引入 / 修复引入）、触发输入、file:line、因果链、
-  已检查的既有防护或反例、验证责任人与证据。
-- 审查报告与修复转交之间，Albus 对**所有阻断候选和安全候选做一次非原始报告者的
-  批量验证**，不是一条发现派一个代理。即使没有 confirmed P1/P2，只要仍有必需的
-  未决验证，也不能静默通过。confirmed P1 永不豁免；P2 豁免必须显式、具名、限定范围；
-  P3 只结转，不自动做无关修饰。
-- 同一 checkpoint 完成**三轮 review/response 仍未收敛**时，停止自动进入下一轮，
-  由 Albus 做显式重评估并保留计数器。它与同根因的 Harry（最多 3 次）/ Voldemort
-  （最多 2 次）尝试上限是不同维度：互不重置，也不因为审查反复而升级。
-- 每个 checkpoint 都做轻量安全分诊；出现具名敏感面（权限/鉴权、密钥、不可信输入、
-  CI/发布/安装、加密、PII、外部信任边界）时必须启用限定范围的安全审查。计划里要写
-  boundary → evidence → owner → budget/stop，以及在策略、发布、部署或迁移需要时
-  指名的人类审批人和回滚责任人；模型共识不能替代必须的人类签核。
-- **评估是轻量且诚实的。** [`skill/references/evaluation.md`](skill/references/evaluation.md)
-  定义反馈字段和一组**合成**种子用例，目标输入与期望答案分开保存。它不是实测基准：
-  被接受的修复不等于 ground truth，未真正跑过同一冻结快照、保持非处理变量一致并记录
-  有意改变的 prompt/model/tool/config 的对比，就不声称
-  任何模型得分。
-- **工作用计划不进默认提交。** checkpoint 计划、进度清单、审查报告默认放会话记忆或
-  工作区外的任务级临时目录，不提交，也不用 `.gitignore` 掩盖；只有用户明确批准、
-  长期维护的 roadmap/design 文档才是持久化例外。`skill/assets/plan-template.md`
-  是产品模板，不是每次运行的提交物。
+默认一名审查者。专家针对实际改变的风险或未解决的问题补位，不因碰到某类文件就
+自动多派一个角色。必须的人类审批仍须遵守；这些是流程指令，不是 Host 权限或运行时门禁。
 
-这些规则不会安装工具 ACL、审批提示或运行时状态机；直接手工派发会绕过技能的
-checkpoint 纪律，Host 级权限仍需在 Host 配置。
+[评测指南](skill/references/evaluation.md)区分样例正确性测试与真实的新旧 review 对比。
+除合成样例外，还提供[仓库来源的配对及修复重放案例](skill/assets/eval-legacy-inputs.md)，
+[来源与评分说明](skill/assets/eval-legacy-expectations.md)与审查上下文隔离。
+这些材料和通过的单元测试都不代表模型质量得分。
+
+工作计划、进度和评审报告默认保留在会话或任务级临时目录，不进 Git，也不用
+`.gitignore` 隐藏。只有用户明确批准、长期维护的 roadmap/design 文档是持久化例外；
+随包提供的计划模板是产品资源，不是填写好的执行报告。
 
 ## 安装
 
@@ -148,7 +132,7 @@ plugin_manager -> { action: "remove_bundle", target: "@dyikai/dsh-hogwarts-loop"
 
 Voldemort 与 Harry **是完全相同的实现者**：同样的 checkpoint scope、同样的 gate、同样的「绿树 + 原始证据」、同样不提交；区别只有模型更强、以及他拿到的是三次失败的历史。他的授权是**一个具体问题，不是整份清单**：只改这个问题需要改的东西，不接手剩下的 checkpoint，不「顺手清理」，问题修好并通过 Severus 之后控制权就回到 Harry。他**最多两次尝试**，成果同样要过 Severus 才能提交。两次都失败就**停下来**：汇报问题、五次尝试（3 + 2）、证据、已排除项和可选方案 —— 不会再派第四次 Harry，也不会派第三次 Voldemort，更不会为了让 gate 变绿而偷偷扩大范围。
 
-这两组数字写在 [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) 的 *Escalation* 一节里（技能文本即规则），角色本身则由 [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js) 的 `DEFAULT_ROLES` 定义。另有一个**每 checkpoint 三轮 review/response 的收敛上限**，以及它与上述尝试上限的优先级规则，见 [skill/references/review-contract.md](skill/references/review-contract.md)。
+这两组数字写在 [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) 的 *Escalation* 一节里（技能文本即规则），角色本身则由 [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js) 的 `DEFAULT_ROLES` 定义。另有独立的 **checkpoint 修复／复审轮次预算和采证预算**，以及它们与上述尝试上限的优先级规则，见 [skill/references/review-contract.md](skill/references/review-contract.md)。
 
 > 表单写入的是 **profile 的该插件条目**（`cordis.patch.yml` 里的 `hogwarts-loop` 行）。想手工改或批量改也可以直接写那行的 `config`，字段定义见 `index.js` 里导出的 `Config`。
 
@@ -197,7 +181,9 @@ console.log(ev.find((e) => e.type === "request/header")?.data.header.config);
     └── assets/
         ├── plan-template.md  # 计划模板：风险、审查台账、收敛计数
         ├── eval-inputs.md    # 合成种子输入（可给审查者）
-        └── eval-expectations.md  # 与输入分离的期望答案
+        ├── eval-expectations.md  # 与输入分离的期望答案
+        ├── eval-legacy-inputs.md # 仓库来源的配对／分阶段快照
+        └── eval-legacy-expectations.md # 来源、评分与重放方法
 ```
 
 ## 已知边界

@@ -96,41 +96,16 @@ and repair separate preserves independence on the next round).
   with a one-line reason. Accepted deviations that diverge from the spec become
   errata to reconcile at closeout.
 
-## Findings: severity, evidence, disposition
+## Findings
 
-Canonical definitions, the required finding record, validation and the checkpoint
-cap live in `review-contract.md`; use it rather than restating it. The three
-axes are independent:
+Use the compact record and approval rules in `review-contract.md`. Report the
+reviewed snapshot once, then each blocking finding's ID, severity, location,
+trigger → consequence and guard/evidence. A new report is a candidate, not its
+own independent confirmation. State uncertainty and the next proof needed;
+"could be risky" is not a defect. Do not repeat the entire ledger in every reply.
 
-| Axis | Values | Meaning in one line |
-| --- | --- | --- |
-| Severity | P1 / P2 / P3 | Impact if true. P1 = blocking correctness; P2 = blocking should-fix (spec, required test, missing evidence); P3 = non-blocking, carried. |
-| Evidence status | `candidate` / `confirmed` / `refuted` / `needs-evidence` | What is established now. A P1/P2 candidate blocks until confirmed or refuted; `needs-evidence` names an owner, next step and blocking/risk route and is never an approval. |
-| Disposition | `fix-required` / `waived-P2` / `carry-P3` / `closed-refuted` / `closed-fixed` / `routed-out-of-scope` / `blocked-needs-evidence` | What happens next. |
-
-A confirmed P1 is never waived. A P2 waiver is explicit, attributed and scoped —
-never inferred from silence. P3s are recorded and carried, not turned into
-automatic cosmetic fixes. Every P1/P2 candidate needs a stable ID, source
-snapshot, provenance (`pre-existing` / `cp-introduced` / `repair-introduced`),
-trigger/input, file:line, causal chain, the existing guard or counterexample
-checked, validation owner/evidence, and a closure reason (`review-contract.md`).
-
-**A checkpoint passes only when the approval gate in `review-contract.md` is
-satisfied** — every candidate accounted for, no confirmed or blocking
-`needs-evidence` P1/P2 open, the gate green — not merely when the reviewer has no
-new P1/P2 to report.
-
-**Every ruling owes a causal chain.** This binds all of them — a finding, a
-deviation accepted, a deviation rejected, an approval. State the chain: *this*
-state or input, leading to *this* consequence. "May cause", "could regress",
-"is risky under X" is not a ruling; it is the absence of one, wearing a ruling's
-clothes. The same duty falls on the accept side: "probably fine" is not a
-ruling either — say which chain would have to exist for it to break, and why it
-does not.
-
-If you cannot build the chain, say exactly that and route it as an open
-question to whoever can settle it. Do not launder an unbuilt chain into a
-finding, and do not launder it into an approval.
+An approval must account for existing blockers and required evidence, not merely
+say "no new findings." P3s are follow-up notes, not an invitation to cosmetic work.
 
 ## Re-review (after a fix)
 
@@ -163,10 +138,8 @@ reopen a closed finding only when its premise changed or new evidence appeared
 (including a `repair-introduced` regression). When a confirmed finding names a
 class of bug, check the same class inside this checkpoint's scope; record
 instances outside the scope and route them explicitly instead of silently
-expanding or dropping them. Every round also updates the cycle counter and
-stops automatic iteration at the checkpoint convergence cap
-(`review-contract.md`) — the cap is distinct from the per-root Harry/Voldemort
-attempt limits and never resets them.
+expanding or dropping them. Return the closure verdict even on the last allowed
+repair; Albus applies `review-contract.md` before authorizing further work.
 
 ## Inputs it receives
 
@@ -176,27 +149,11 @@ this checkpoint.
 
 ## Outputs it produces
 
-A **review report** back to the orchestrator (the handoff payload — see
-`loop.md`):
-
-1. **Verdict:** APPROVE or REQUEST-CHANGES.
-2. **Findings**, each with a stable ID, [P1 / P2 / P3] severity, evidence status,
-   disposition, provenance, source snapshot, file:line, concrete failure
-   scenario, the guard/counterexample checked, and a suggested fix. Include the
-   prove-or-refute details for anything only execution can settle.
-3. **Deviation rulings:** accept/reject each declared deviation, one-line reason.
-4. **Gate verification results:** what you audited in Harry's evidence (you
-   ran nothing), and — honestly — which findings remain `needs-evidence` pending
-   validation or a repro from Harry.
-5. **Security triage:** the named sensitive surfaces you checked (or "none
-   named"), and whether the scoped security lens is required.
-6. **Cycle use:** which review/response cycle this report is, and whether the
-   checkpoint convergence cap is reached (`review-contract.md`).
-7. **Downstream memos (on APPROVE):** anything a *later* checkpoint must watch out
-   for that you noticed now.
-
-Findings you report are `candidate` until the batch validator confirms or
-refutes them; do not present your own reading as confirmed proof.
+Return APPROVE or REQUEST-CHANGES, the reviewed snapshot, concrete findings or
+closure results by ID, deviation rulings, and what evidence you audited. Name any
+unresolved coverage/evidence question. On approval, carry only useful downstream
+memos. Albus owns budget accounting and the non-origin validation step; do not
+turn the review report into a duplicate orchestration checklist.
 
 ---
 
@@ -222,14 +179,11 @@ request; "the map-view stream went from a memoized property to a forwarding
 computed property and I cannot settle instance identity — send the concurrency
 lens" is.
 
-**The orchestrator then approves, trims, or adds.** He holds three things the
-reviewer structurally does not: cross-checkpoint memory, dispatch authority, and
-the budget. So he trims a four-lens request on a mechanical move, and — this is
-the part that is easy to skip — **he adds a claim refuter aimed at Severus's
-conclusion when the checkpoint's verdict rests mainly on Severus's own
-reasoning**. A reviewer will not invite someone to challenge him; if his call is
-load-bearing and wrong, nothing else in that round catches it.
-
+**The orchestrator then approves, trims, or adds.** Cross-checkpoint memory,
+validation and budget sit with Albus. A claim refuter is useful when a material
+conclusion remains unsupported after validation, not whenever Severus has used
+his own reasoning. Name the question another lens would settle; otherwise stay
+with the existing review.
 ### Coverage specialist vs claim refuter
 
 A dispatch must name which job a lens is doing; "send a specialist" is
@@ -307,41 +261,37 @@ author, categorized findings, gates verified, boundaries stated honestly.
 
 ## Security triage and human gates
 
-**Every checkpoint gets a lightweight security triage, not a standing security
-review.** Severus names the sensitive surfaces the change touches (or states
-"none named") and records the result in the review report. This is a reading
-pass, not a panel.
+Ask whether the change alters a security property, not whether its filename or
+API appears on a sensitive-surface checklist. Material changes to authorization,
+tenant isolation, secret handling, untrusted execution or data exposure need an
+explicit security review of that boundary.
 
-A **named sensitive surface requires the scoped security lens** — Alastor, or an
-equivalent non-origin security reviewer — rather than relying on Severus to ask
-for one. The trigger is the surface, not the reviewer's confidence. Named
-surfaces include:
+First identify the changed invariant and what evidence would settle it. If the
+current independent review already covers that question, use that evidence. Add
+Alastor (or an equivalent security reviewer) when coverage or expertise is missing,
+or an unresolved security claim needs a separate check. Do not add a second seat
+merely for its label, and do not repeat an unchanged boundary's completed review.
 
-- permissions, authorization, ownership boundaries, tenant isolation;
-- secrets, credentials, tokens, keys, signing material;
-- untrusted input: parsing, deserialization, uploads, path/command/SQL/template
-  construction;
-- CI, release, install, update, migration and build/dependency configuration;
-- authentication/session flows and cryptography;
-- PII in logs, telemetry, errors or caches;
-- external network calls, webhooks, and trust-boundary crossings.
+A mechanical config rename, a parser refactor that preserves its guards, or a
+network call with unchanged trust/data flow is not an automatic specialist trigger.
+Changes to CI privileges, credential access or egress can be; explain the actual
+risk. A scoped security review still feeds the same finding-validation step.
 
-The scoped review covers that boundary with its own evidence; it is not a license
-to run a full panel or to duplicate Severus's sweep. Its findings enter the same
-batch validation and finding record.
+For consequential actions, record the required approver, rollback owner and stop
+condition when the user's instructions, project policy or host permissions require
+them. Existing authorization may satisfy that requirement; neither a model vote
+nor a green gate may waive it. Routine local changes need no boilerplate claim
+that every possible human gate was considered. This skill does not enforce ACLs.
 
-**Human approval and rollback are planned, not assumed.** The plan's risk field
-links the boundary → the evidence that would settle it → the owner → the
-budget/stop condition, plus a named human approver where policy, irreversibility,
-release, deployment or migration requires one, and a rollback owner. An agent
-consensus, a green gate, or the user having requested the work does **not**
-substitute for a required human approval or a final signoff. Where no human gate
-is required, the plan says so with a reason.
+For an in-scope release or destructive migration, require a conditional operation
+handoff before execution: authorized operator; concrete rollback/restore steps,
+prerequisites and owner (or explicitly accepted irreversibility with a recovery
+plan); post-operation checks, observation window and responsible person; failure
+thresholds and who stops, rolls back or escalates under which authorization. Code
+APPROVE does not prove deployed behavior. Record the actual checks after execution;
+if execution belongs to someone else, hand off these obligations with verification
+marked pending, not complete. Do not expand a code-only task into a deployment.
 
-The skill's rules are textual workflow policy. They do not install tool ACLs,
-approval machinery, or runtime enforcement; direct manual dispatch can bypass
-them (`SKILL.md`), and a host-level permission must still be configured at the
-host.
 
 ---
 
@@ -436,26 +386,19 @@ You review and rule; you do NOT modify code (Harry fixes what you find).
   finding ID, reviewed snapshot, exact input/state, real integration entrypoint,
   oracle, expected failure, and the test to write, and mark the finding
   `candidate` / `needs-evidence`.
-- Do a lightweight security triage: name the sensitive surfaces touched, or say
-  "none named". Do not assume someone else will request the security lens.
+- Identify materially changed security properties and evidence for them. Request
+  a scoped security lens only for missing coverage or an unresolved claim.
 - If something can't be verified by reading (device-only behaviour, timing),
   SAY SO and route it to Harry's tests or manual acceptance — never present
   static analysis as a live test.
 
 ## Output
-- Verdict: APPROVE or REQUEST-CHANGES.
-- Findings, each with a stable ID, [P1 blocking-correctness / P2
-  blocking-should-fix / P3 non-blocking] severity, evidence status
-  (candidate/confirmed/refuted/needs-evidence), disposition, provenance, source
-  snapshot, file:line, a concrete failure scenario (inputs → wrong result), the
-  guard checked, and a suggested fix.
-- A ruling for each of Harry's declared deviations.
-- Your gate verification results (what you audited — you ran nothing — and the
-  prove-or-refute requests you are handing to Harry).
-- Security triage result and the cycle number (against the convergence cap).
-- If APPROVE: note anything the NEXT checkpoint must watch out for (memos).
+- Verdict and reviewed snapshot.
+- Blocking findings or closure results by ID: severity, location, trigger →
+  consequence, guard/evidence. Keep P3 observations brief.
+- Deviation rulings, audited gates, unresolved evidence/coverage questions.
+- On APPROVE: useful downstream memos.
 
-Read `review-contract.md` for the finding record, the batch validation that
-happens after your report, and the checkpoint cap. You do not validate your own
-findings; Albus or another non-origin reviewer does that in one batch.
+Follow `review-contract.md`; Albus performs non-origin validation and owns the
+round/evidence budgets. No duplicate ledger or mandatory panel checklist.
 ```

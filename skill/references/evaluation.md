@@ -1,113 +1,73 @@
-# Evaluation and lightweight feedback
+# Does the review actually help?
 
-Canonical guidance for learning from review outcomes without turning the loop
-into a benchmark product. This file owns the feedback fields, the synthetic seed
-corpus, and the honest limits of any comparison. `review-contract.md` owns the
-finding lifecycle; this file consumes its vocabulary.
+The outcome to improve is **real defects caught with fewer false-positive repairs
+and less review effort**. More findings, more rules and more passing repository
+tests are not substitutes for that outcome. No before/after model-quality result
+is supplied with this skill.
 
-## What to record
+## Keep ordinary feedback small
 
-Keep the record lightweight and concise, in the working plan or the conversation
-— not in a per-run audit bundle:
+At pass or stop, record a short note in the session/working plan:
+- counts of confirmed/refuted/needs-evidence findings and any escaped defects;
+- repair rounds and evidence batches used, including why a limit was reached;
+- measured time/tokens/tool cost, or "unavailable".
 
-- review/response cycles used against the checkpoint convergence cap;
-- outcomes by severity and evidence status: `candidate` → `confirmed` /
-  `refuted` / `needs-evidence`, confirmed findings fixed vs explicitly waived
-  P2, P3s carried;
-- escaped defects: a defect found after APPROVE or commit, with provenance
-  (`pre-existing`, `cp-introduced`, `repair-introduced`) and how it escaped;
-- when actually available, wall-clock time and token/cost per cycle, plus the
-  reviewer configuration (role/model, prompt/contract revision, available
-  tools). If a number was not measured, write "unavailable" — never estimate it
-  as if it were measured;
-- the configuration and snapshot used for any comparison, so a later run is
-  reproducible.
+An accepted fix is not ground truth. Review the underlying failure before using
+it as a positive example. Keep temporary transcripts/logs outside the workspace
+and clean them after their consumers finish (`loop.md`). Do not commit run reports
+by default or turn every checkpoint into a benchmark exercise.
 
-These entries are feedback about the process. Raw logs, evaluator transcripts
-and scoring scratch files are temporary artifacts under `loop.md`; they are not
-repository deliverables.
+## Two different checks
 
-## What the numbers do and do not mean
+`assets/eval-inputs.md` and `assets/eval-expectations.md` are **synthetic smoke
+cases**, not a representative benchmark. Inputs go to the reviewer; expectations
+stay with the scorer, outside the reviewer's accessible evaluation context.
+E1–E4 exercise finding quality; E5 exercises orchestration decisions. Do not score
+an orchestrator's supplied facts as if the reviewer discovered them.
 
-- An accepted fix is **not ground truth**. It can be accepted for budget,
-  compatibility, or a P2 waiver while remaining wrong.
-- Finding counts are **not recall**. A reviewer that reports no defects has not
-  demonstrated correctness, and a reviewer that reports many has not
-  demonstrated coverage.
-- A green suite is evidence about the tests that ran, not about the paths they
-  bypass (`review-contract.md`).
-- Do not compare raw counts across different snapshots or non-treatment
-  variables. Compare only the same target snapshots, record exactly which
-  prompt/tool/model/config intentionally differs, and hold everything else equal.
-- **Never claim an actual model score without running the protocol.** No
-  measured reviewer improvement is claimed by the docs or by the contract tests;
-  the synthetic seeds are examples, not a score.
-- No external paid model runner, nightly scheduler, or evaluation framework is
-  part of this skill. This guide does not call a live model or provider; a
-  human/local evaluator runs the comparison and records the outcome.
+`assets/eval-legacy-inputs.md` adds a repository-derived test-isolation case with
+faulty/partial/correct snapshots. Its separate `eval-legacy-expectations.md` holds
+source anchors, paired scoring, a sequential repair replay carrying actual reports,
+and a full-loop variant where the author must produce its own repair. The partial
+repair is synthetic; it is not a claimed historical agent response. This is one
+verified repository seed, not representative coverage or a historical false-alarm
+corpus. Accumulate further cases only from independently verified incidents.
 
-## Synthetic seed corpus
+Repository fixture tests execute the JavaScript examples to check their ground
+truth (including deliberately faulty behavior). They do not run agents, enforce
+the prose workflow, or measure review quality. Dispatcher compatibility tests
+protect role reuse; they also say nothing about finding precision or recall.
 
-The corpus lives beside the plan template:
+## Small controlled comparison, not a new framework
 
-- `../assets/eval-inputs.md` — target inputs only, safe to hand to a reviewer;
-- `../assets/eval-expectations.md` — the expected answers and scoring notes.
+Before claiming an improvement:
 
-Keep them separate. Never paste the expectations into a reviewer prompt, a
-workspace, or a child's brief; that leaks answers and invalidates the run. The
-files are clearly labelled **synthetic**: they are product examples written for
-this skill, not historical incidents, not a measured precision/recall report,
-and not claims about any model.
+1. Freeze a small set of representative **real repository diffs**: verified bugs,
+   clean changes and repairs that introduce a new defect. Have someone outside
+   the compared runs establish the expected defects and relevant guards. Keep
+   commit messages, fixes and gold answers out of the target context. The shipped
+   toy cases may check the setup, but cannot replace this set.
+2. Compare the old and proposed instructions on those same snapshots. Hold the
+   model, tools and other non-treatment variables fixed; record the intentional
+   difference. Use fresh, isolated contexts, not persistent production roles that
+   remember earlier answers. Repeat small samples before trusting a lucky run.
+3. If the claim concerns **the loop**, exercise the loop: candidate report →
+   independent validation → author evidence/repair → incremental re-review.
+   A reporting-reviewer-only run measures detection, not validation, closure,
+   convergence or the cost of handoffs. The scripted legacy replay checks closure
+   across actual reviewer turns but supplies repairs; it does not measure author
+   performance or full-loop cost. Keep these result types distinct.
+4. Score defect matches rather than wording: true findings and misses, false
+   alarms that survived validation, unnecessary repairs, remaining/new defects
+   after closure, productive work stopped by a budget, and actual review cost.
+   Record rounds and evidence batches separately. Wrongly closing an unfixed
+   defect is a miss even if the report uses every required status word.
+5. Prefer the smaller policy when it catches the same important defects at lower
+   cost. If detection improves but cost/noise rises, report that tradeoff instead
+   of collapsing it into a single score. Preserve counterexamples when tuning.
 
-The seed set is intentionally small but covers the cases that change a review
-outcome:
-
-| ID | Case | What it exercises |
-| --- | --- | --- |
-| E1 | Cross-tenant cache leak | a real executable/security defect with provenance and a no-waiver P1 |
-| E2 | Guarded parser | a guarded false positive that should be refuted, not fixed |
-| E3 | Green unit test, untested integration path | `needs-evidence` blocking and the no-silent-approval rule |
-| E4 | Save repair | the original leak stays open under the same ID, plus a repair-introduced silent-success regression with a new ID |
-| E5 | Three cycles plus a new P1 | the convergence cap, counter preservation, and escalation precedence |
-
-### Running a manual comparison
-
-1. Freeze the target snapshot(s) and every **non-treatment variable**; decide
-   exactly which prompt, tool, model, or config parameter is the variable under
-   test. Run in a fresh evaluation context, not a persistent production role with
-   prior answers. Give the reviewer only `eval-inputs.md` (or the specific case)
-   and the review contract; withhold gold and previous-run answers.
-2. Collect the report. Map each finding to the expectation by defect and stable
-   ID, not by wording.
-3. Record the outcomes: expected blocking defect found at the right evidence
-   stage, false positives on the guarded case, correct `needs-evidence` routing,
-   whether the repair regression was caught without closing the original leak,
-   and the convergence decision.
-4. Compare two configurations only on the same frozen snapshots with the
-   non-treatment variables held equal; record exactly which prompt/model/tool/
-   config intentionally differs. Report recall-of-expected-defects,
-   noise/false-positive count, evidence-stage correctness and convergence cycles
-   separately — never a single "score".
-5. Keep the run artifacts outside the workspace for the review window and clean
-   them up when done (`loop.md`, Temporary artifacts). If no run was executed,
-   say so.
-
-### Growing the corpus
-
-Future cases may come from expert-verified incidents, postmortems, reverts, and
-clean diffs that should produce little or no noise. For each addition:
-
-- keep the target input and the expected answer in separate files;
-- label the provenance (synthetic vs observed) and remove client secrets or
-  private data;
-- record the expected finding's severity, evidence status, disposition and the
-  evidence that would confirm it — not just "should find a bug";
-- rescore when a prompt, tool, persona, model, or contract change could move the
-  result.
-
-## Contract tests are not model quality
-
-Unit and static fixture checks validate that the contract documents and seed
-files exist, stay consistent, and keep inputs separate from expectations. They
-do **not** evaluate a model's review quality, and passing them must never be
-reported as a measured evaluation result.
+There is no automatic or paid runner here. A run needs its own authorized scope
+and budget; this guide is not permission to start agents or spend credits.
+Without a comparison, report only the changes made and tests actually executed.
+Do not describe a documentation refactor or a green test suite as measured review
+improvement.

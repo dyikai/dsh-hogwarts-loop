@@ -34,22 +34,10 @@ scope, and tell the truth about what happened."
   didn't reproduce is worse than useless. Every test the checkpoint calls for
   is written, built and run here, in development: the reviewer will not build
   anything, so what you hand over must already be a fully green tree plus its
-  evidence. When Severus returns a **prove-or-refute request** (a suspected bug
-  he could only reason about), you write the test that settles it — **but first
-  run it unchanged on the reviewed snapshot and return the red evidence for
-  non-origin confirmation; do not repair yet.** Only after E authorizes repair
-  of the confirmed finding do you fix the bug and keep the test. If it cannot
-  fail, show why. Capture the **red run before repair** on the reviewed snapshot
-  and the **green run after** on the fixed tree, with raw output, both source
-  stamps, and the repro test unchanged between them. Route the test through the real
-  integration entrypoint and the oracle the request names; a direct call that
-  bypasses the shipping path confirms nothing. **Never reset, checkout, stash or
-  restore the tree to manufacture a pre-fix state** — red is observed before the
-  fix, and a missed red is reported, not reconstructed. Static causal proof
-  remains valid for deterministic code/data-flow findings; not every finding
-  needs an executable test. An old green suite is not proof of an unexercised
-  path, and a failed repro refutes only that bounded scenario. Your fix report
-  proposes a disposition; an independent re-review closes it.
+  evidence. Follow `review-contract.md` for prove-or-refute requests:
+  collect evidence before an unconfirmed repair, retain the unchanged repro's
+  red/green results when execution is needed, and report unresolved proof honestly.
+  Albus tracks the budgets; the independent reviewer closes findings.
 - **Measure and ablate before delivery.** Follow `ablation.md` for every delivery
   and fix report. Report the trigger decision; when triggered, perform controlled
   removals/substitutions, retain unchanged acceptance, and gate the combined
@@ -116,23 +104,16 @@ see `loop.md` for how it flows):
 3. Every deviation, each with ID + what + why.
 4. Files changed / added.
 5. Points to review hardest (self-flagged risk spots).
-6. For a repro-route finding: the unchanged test, pre-fix red raw output and
-   pre-fix stamp returned for non-origin confirmation **before repair**, then
-   post-fix green raw output and fixed stamp after the authorized fix, plus the
-   oracle/entrypoint inspected. For a static-route finding: fixed-state source
-   and gate evidence. For unresolved verification: the open `needs-evidence`
-   record with its owner and next step — never reported as passed.
-7. Opening/current review-cycle count and, when available, the lightweight
-   feedback fields from `evaluation.md` (finding outcomes, escaped defects,
-   measured time/token cost; "unavailable" if not measured).
-8. Explicit confirmation: not committed, did not exceed scope.
+6. Evidence for requested probes/fixes under `review-contract.md`; unresolved
+   questions with their next step, never reported as passed.
+7. Explicit confirmation: not committed, did not exceed scope.
 
 On a **fix round** (after REQUEST-CHANGES), the report is scoped to the fix: what
 each finding's fix was (by stable ID, with a **proposed** disposition — not a
 self-closed one), the pre-fix red and post-fix green repro evidence with both
 stamps where execution applied, the reran gate (per the gate economy — the fast
 tier on slow-build stacks; the one final full gate lands before commit), the
-updated cycle count, and any new tests added to lock the bug so it cannot recur.
+new regression tests, and any unresolved evidence question.
 Only an independent re-review closes a finding. A refuted finding is not
 repaired; a P2 waiver is not yours to grant; a P3 is carried, not auto-fixed.
 

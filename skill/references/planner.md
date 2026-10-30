@@ -41,15 +41,12 @@ commit discipline are the rest.
   implementation. Every Harry report includes measurements; triggered work needs
   experiments and a validated survivor before review. Preserve the last validated
   ablation baseline across subthreshold repair reports.
-- **Plan the risk and approval field, not just tests.** For each checkpoint record
-  the risk boundary → the evidence that would settle it → the owner → the
-  budget/stop condition, plus a named human approver where policy,
-  irreversibility, release, deployment or migration requires one, and a rollback
-  owner. Do not assume the user requesting the work is the final signoff. A
-  lightweight security triage is mandatory every checkpoint; a named sensitive
-  surface (permissions/authz, secrets, untrusted input, CI/release/install,
-  crypto, PII, external trust boundaries) requires the scoped security lens
-  (`reviewer.md`). Where no human gate applies, say so with a reason.
+- **Plan material risk, not a signoff checklist.** Name changed security properties
+  and any missing review coverage (`reviewer.md`). Record evidence/owner/stop and
+  rollback or human approvals only where the actual risk or applicable policy
+  calls for them; routine local changes need no approval boilerplate. For an
+  in-scope release/destructive migration, plan the concrete recovery and
+  post-operation verification handoff defined in `reviewer.md` before execution.
 - **Write the working plan** (`assets/plan-template.md`): checkpoint map, gates,
   acceptance mapping, deviation registry, carry-forward memos, and an explicit
   **storage/retention decision**. Default to session memory or one task-scoped
@@ -84,67 +81,25 @@ commit discipline are the rest.
   Severus reads the code and is better placed to judge the rest; if he needs a
   specialist he will ask (`reviewer.md`, Convening). Do not pre-assemble a panel
   from risk adjectives.
-- **Choosing lenses — three questions, each with a trigger you can check.**
-  Since Severus proposes the panel from the diff (`reviewer.md`, Convening), what
-  is left to you is small and mechanical. Do not substitute a feeling about risk.
+- **Choosing lenses — three concrete questions.**
+  1. What earlier memo or invariant does this CP need? Include it explicitly;
+     persistence does not give a role knowledge of other roles' conversations.
+  2. Is this the first work of its kind in the run? Brief the standard it must
+     establish. Add a specialist only if the existing review cannot cover it.
+  3. Is a consequential causal chain still merely asserted? Try to settle it in
+     validation; if it remains unresolved, request a bounded refutation or probe,
+     not another generic review.
 
-  1. **Is there a memo addressed to this checkpoint?** Trigger: search the plan's
-     carry-forward memos for this checkpoint's id. Whatever you find is mandatory
-     briefing. Do not rely on the reviewer's memory alone: he may not have seen
-     another role's earlier findings or Albus's decisions, so cannot be expected
-     to ask for a constraint he was never given.
-  2. **Is this the first checkpoint of its kind in the run?** Trigger: has any
-     earlier checkpoint done this *category* of work — first to register a file
-     with the build system, first to introduce tests, first to drop an interface
-     conformance, first to move stateful members rather than pure functions,
-     first to touch concurrency or async lifetimes? Firstness is
-     cross-checkpoint knowledge: the reviewer sees *what* the diff does but not
-     that it is the first time, and therefore not that whatever standard is set
-     here will propagate to every later checkpoint of that kind. Brief a lens for
-     the category, and say plainly that its output becomes the standard.
-  3. **Has the causal chain been constructed, or only asserted?** Every ruling
-     owes a chain — *this* state or input, leading to *this* consequence. There
-     is no second category of ruling that gets to stay vague. Trigger: take the
-     implementer's own "least confident" item and ask whether anyone has yet
-     built the chain, in either direction.
-     - *Built* — by the implementer, or settled by running something anyone can
-       run. No extra lens.
-     - *Asserted but not built* — add a **claim refuter**: a bounded lens whose
-       job is to **construct the chain or demonstrate that none exists**, not to
-       offer a second opinion. It may read the same surface as Severus because
-       its question is about one load-bearing conclusion, not coverage; it does
-       not re-run the whole review. Two opinions on an unfalsifiable claim are
-       still not evidence. This is also the case where the verdict would
-       otherwise rest on one reviewer's reasoning: he will not request a
-       challenger to himself, and if his reasoning is load-bearing and wrong,
-       nothing else in the round catches it.
-
-- **On a convening request: approve, trim, or add.** Trim what the budget does not
-  justify. Add the plan-derived lens he could not know to ask for. And **add a
-  claim refuter aimed at Severus's reading whenever the verdict rests on it** —
-  he will not request that one himself, and nothing else in the round covers it.
-  Distinguish the two jobs when briefing: a **coverage specialist** is named for
-  an uncovered boundary and owns that surface; a **claim refuter** is a bounded
-  challenge to one critical conclusion (`reviewer.md`).
-- **Security triage is never optional by silence.** Every checkpoint gets the
-  lightweight triage; when the plan or diff names a sensitive surface, the scoped
-  security lens is required even if Severus does not ask. Do not let a missing
-  request downgrade a named boundary.
-- **You own the review's size, and it is the run's dominant cost.** A fan-out
-  panel costs orders of magnitude more than one reviewer, so sizing it is a real
-  budget decision every round, not a formality — see `loop.md` (Review economy).
-  The test before convening is mechanical: **name the specific thing the panel
-  would look at that Severus's own pass would not.** Can't name it? Don't
-  convene. Sizing by how important the checkpoint feels, or by how confident the
-  reviewer sounds, both fail — importance is already priced into running this
-  loop at all, and a reviewer is most confident exactly where his lens doesn't
-  reach. When you do convene, spend on lenses that ask a *different question*,
-  not on re-asking the same one harder.
-- On REQUEST-CHANGES, batch-validate the candidates (above), relay the confirmed
-  blocking findings and open evidence routes back to Harry, and loop. Update the
-  cycle counter each round; at three completed review/response cycles without
-  resolution, stop the automatic next cycle and record the explicit reassessment
-  (`review-contract.md`).
+- **On a convening request: approve, trim, or add.** Name the missing boundary or
+  unresolved consequential claim. Albus's validation often settles a claim without
+  another agent; add a refuter only when that check cannot settle it. Security
+  coverage follows the changed-property rule in `reviewer.md`, not file categories.
+- **You own review cost.** Name what an added lens can settle that the current
+  pass cannot. If it has no distinct question, don't convene it. Check measured
+  cost when available instead of assuming more reviewers produce better results.
+- On REQUEST-CHANGES, batch-validate candidates and send a bounded repair or
+  evidence-only request. Account for the two budgets under `review-contract.md`;
+  do not count a probe as an extra repair round.
 - Transport discipline: use `hogwarts_dispatch` at every edge. It creates each
   role once per parent session, then sends every later brief to that *same*
   child. Record the returned childId; CP completion and `inactive` never mean
@@ -156,27 +111,14 @@ commit discipline are the rest.
 
 ### 3. Judge
 
-- A checkpoint passes **only when the approval gate in `review-contract.md` is
-  satisfied and the full gate is green on the exact state being committed** —
-  every candidate accounted for, no confirmed or blocking `needs-evidence` P1/P2
-  open, deviations ruled, P2 waivers explicit and attributed, and any required
-  human approval present. Never advance with an open P1/P2 or a green suite over
-  unresolved required verification. A confirmed P1 is never waived. (All gate
-  execution is Harry's; in expensive-gate mode the final full-gate run happens
-  exactly once, by Harry on the final state, its stamp audited before you commit
-  — see `loop.md`, Gate economy.)
-- When Harry and Severus disagree, *you* adjudicate: rule the contested point and
-  record the decision. The reviewer proposes; the planner decides. Adjudication
-  does not relabel an unvalidated candidate as confirmed, and it does not replace
-  a required human approval with model consensus.
-- Track the checkpoint cycle counter. At **three completed review/response
-  cycles** with blocking findings unresolved (the checkpoint convergence cap),
-  stop automatic iteration and record the reassessment decision:
-  approach/scope, reviewer churn, and either a bounded human-authorized
-  continuation with preserved counters or a stop/report. Do not reset the counter
-  by re-scoping, renaming, swapping reviewers, or escalating; the same-root
-  Harry/Voldemort limits stay independent (`review-contract.md`). Newly discovered
-  serious findings stay triaged and routed even at the cap.
+- Apply the approval and stop rules in `review-contract.md`. In expensive-gate
+  mode, Harry runs the final full gate once on the final state; audit its stamp
+  before commit (`loop.md`).
+- Adjudicate author/reviewer disagreements from the evidence and record the reason.
+  Do not manufacture confirmation or replace a required human approval.
+- Track completed repair/re-review rounds and evidence-only batches separately.
+  Always obtain the closure verdict on a delivered repair before deciding whether
+  another author action is allowed. Preserve same-root attempt counts.
 
 ### 4. Clean up, commit & advance
 
@@ -211,7 +153,7 @@ commit discipline are the rest.
   deviations into the spec and write the acceptance mapping (automated test /
   headless assertion / manual-or-user acceptance — stated as such, never faked).
 - Keep the lightweight feedback entry from `evaluation.md`: outcomes by
-  severity/evidence status, cycles used, escaped defects, and measured cost when
+  severity/evidence status, rounds/probes used, escaped defects, and measured cost when
   available. It is process feedback, not a claim that accepted fixes are ground
   truth or that finding counts measure recall. Use the synthetic seed corpus only
   for a manual comparison on a frozen snapshot; never report a model score that
@@ -241,17 +183,13 @@ For each checkpoint, in dependency order (edges are specified in `loop.md`):
 2. Receive Harry's delivery report (edge B). Check the gate evidence first — a
    red gate (unless ruled pre-existing/environmental) bounces straight back to
    Harry; it never enters review.
-3. Brief Severus / a specialist (edge C). Include the named sensitive surfaces and
-   the current cycle counter.
-4. Receive the review report (edge D). Batch-validate every blocking P1/P2 and
-   security candidate in one non-origin pass; do not relay a repair order on a
-   candidate.
-5. If REQUEST-CHANGES → relay only confirmed blocking findings and open evidence
-   routes (edge E) → Harry fixes (edge F) → re-review (back to edge C). Count the
-   completed cycle; at three without resolution stop the automatic next cycle and
-   record the reassessment decision. Loop only until clean or that decision.
-6. If APPROVE and the approval gate is satisfied → complete and verify
-   temporary-artifact cleanup → record the feedback entry → commit code/tests,
+3. Brief Severus (edge C), adding a specialist only for a named coverage gap.
+4. Read the verdict (edge D), validate candidates, adjudicate deviations.
+5. For REQUEST-CHANGES, send the bounded repair or evidence request (edge E).
+   Re-review fixes, keep both budgets, and stop/reassess at their limits rather
+   than automatically dispatching more work (`review-contract.md`).
+6. If APPROVE and the approval gate is satisfied → clean obsolete artifacts while
+   preserving the active plan/carry-forward state → record feedback → commit code/tests,
    update/stamp the working plan in its storage, and update an approved durable
    doc only under its retention decision → fold memos forward → advance.
 

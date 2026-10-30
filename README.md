@@ -16,7 +16,7 @@
 | Capability | Form | Where it lives |
 | --- | --- | --- |
 | The loop methodology and each role's detailed duties | the `hogwarts-loop` skill (also triggerable as `/hogwarts-loop`) | `skill/SKILL.md`, `skill/references/*.md` |
-| Finding record, batch validation, convergence cap, and evaluation guide | markdown contract + synthetic seed cases | `skill/references/review-contract.md`, `skill/references/evaluation.md`, `skill/assets/eval-*.md` |
+| Finding record, batch validation, convergence cap, and evaluation guide | markdown contract + synthetic and repository-derived cases | `skill/references/review-contract.md`, `skill/references/evaluation.md`, `skill/assets/eval-*.md` |
 | Create or continue the same cast member within a parent session | the `hogwarts_dispatch` tool | registered by `index.js` |
 | Edit provider / model / effort / output cap per role | **Settings → Hogwarts Loop**, plus the Plugins page row for this plugin | `client.js` (browser half) |
 
@@ -41,48 +41,27 @@ combined survivor, and gives Severus the evidence to audit. This is a workflow
 gate, not a runtime code-size scanner; direct manual dispatch skips the skill's
 checkpoint discipline. Thresholds and counting rules have one canonical home.
 
-## Review findings and convergence
+## Review discipline
 
-Review behavior is specified as a **textual workflow contract**, not as host
-permissions. The canonical rules are in
-[`skill/references/review-contract.md`](skill/references/review-contract.md).
+The [review contract](skill/references/review-contract.md) keeps a few rules:
+validate blocking candidates before repair, preserve evidence and finding IDs,
+and independently check the fix rather than repeating the whole review.
+Complete repair/re-review rounds and evidence-only batches have separate budgets;
+normal proof gathering is not counted as another repair round.
 
-- Every finding keeps **severity** (P1/P2/P3), **evidence status**
-  (`candidate` / `confirmed` / `refuted` / `needs-evidence`) and **disposition**
-  separate, with a stable ID, provenance, source snapshot, file:line, causal
-  chain, the guard checked, and validation evidence.
-- Between the review report and the fix relay, Albus batch-validates every
-  blocking and security candidate in **one non-origin pass** — not one agent per
-  finding. A zero-confirmed-findings report does not silently approve unresolved
-  required verification. A confirmed P1 is never waived; P2 waivers are explicit
-  and attributed; P3s are carried, not auto-fixed.
-- After **three completed review/response cycles** without resolution, automatic
-  iteration stops and Albus records an explicit reassessment with preserved
-  counters. This checkpoint-wide cap is separate from the same-root Harry (max 3)
-  / Voldemort (max 2) attempt limits; neither resets the other and churn alone
-  never triggers escalation.
-- A lightweight security triage runs every checkpoint; named sensitive surfaces
-  (auth/permissions, secrets, untrusted input, CI/release/install, crypto, PII,
-  external trust boundaries) require the scoped security lens. The plan carries
-  boundary → evidence → owner → budget/stop plus a named human approver and
-  rollback owner where policy, release, deployment or migration requires them.
-  Model consensus does not replace a required human signoff.
-- **Evaluation is lightweight and honest.**
-  [`skill/references/evaluation.md`](skill/references/evaluation.md) defines the
-  feedback fields and a small **synthetic** seed corpus kept as separate target
-  inputs and expected answers. It is not a measured benchmark: accepted fixes are
-  not ground truth, and no model score is claimed without actually running the
-  comparison on the same frozen snapshot with non-treatment variables held equal
-  and the intentional prompt/model/tool/config change recorded.
-- **Working plans are not commits.** Checkpoint plans, progress lists and review
-  reports default to session memory or a task-scoped temp root outside the
-  workspace; they are not committed and are not hidden behind `.gitignore`. A
-  user-approved, maintained roadmap/design document is the durable exception.
-  `skill/assets/plan-template.md` is a product template, not a per-run commit.
+One reviewer is the default. Specialists cover an actual changed risk or unresolved
+question, not every file in a broad category. Required human approvals remain in
+force. These are workflow instructions, not host permissions or runtime enforcement.
 
-The skill's rules do not install tool ACLs, approval prompts, or runtime state
-machinery. Direct manual dispatch bypasses the skill's checkpoint discipline, and
-host-level permissions must still be configured at the host.
+[Evaluation](skill/references/evaluation.md) distinguishes fixture checks from real
+before/after review comparisons. A [repository-derived pair and repair replay](skill/assets/eval-legacy-inputs.md)
+complements the synthetic cases; [scoring and provenance](skill/assets/eval-legacy-expectations.md)
+stay outside reviewer context. None of these artifacts is a model-quality score.
+
+Working plans, progress lists and review reports stay in the session or task-scoped
+temporary storage by default, not in Git or behind `.gitignore`. Only an explicitly
+approved, maintained roadmap/design document is durable; the shipped plan template
+is a product asset, not a filled-in execution report.
 
 ## Install
 
@@ -159,7 +138,7 @@ Harry gets **at most three attempts** at a problem (one attempt = one build → 
 
 Voldemort is **exactly the same implementer as Harry**: same checkpoint scope, same gates, same "green tree plus raw evidence", and he does not commit either. The only differences are a stronger model and the history of three failed attempts. His mandate is **one specific problem, not the whole checklist**: he changes what that problem needs, he does not take over the remaining checkpoints, he does not "clean up while he is here", and once the problem is fixed and has passed Severus, control returns to Harry. He gets **at most two attempts**, and his work must also pass Severus before it is committed. If both fail, the loop **stops**: report the problem, the five attempts (3 + 2), the evidence, what was ruled out, and the options — no fourth Harry, no third Voldemort, and no quietly widening the scope to turn the gates green.
 
-These two numbers live in the *Escalation* section of [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) — the skill text is the rule. The cast itself is defined by `DEFAULT_ROLES` in [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js). The separate checkpoint-wide three-cycle convergence cap (and its precedence with these attempt limits) is in [skill/references/review-contract.md](skill/references/review-contract.md).
+These two numbers live in the *Escalation* section of [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) — the skill text is the rule. The cast itself is defined by `DEFAULT_ROLES` in [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js). The separate checkpoint-wide repair-round and evidence budgets (and their precedence with these attempt limits) are in [skill/references/review-contract.md](skill/references/review-contract.md).
 
 > The form writes this plugin's **profile row** (the `hogwarts-loop` entry in `cordis.patch.yml`). Editing that row's `config` by hand or in bulk works too; the field definitions are the `Config` export in `index.js`.
 
@@ -208,7 +187,9 @@ Expect `agentModel` / `config.model` to equal that role's configured model.
     └── assets/
         ├── plan-template.md  # working plan: risk, review ledger, convergence
         ├── eval-inputs.md    # synthetic seed targets (reviewer-safe)
-        └── eval-expectations.md  # answers kept separate from the targets
+        ├── eval-expectations.md  # answers kept separate from the targets
+        ├── eval-legacy-inputs.md # repository-derived paired / staged snapshots
+        └── eval-legacy-expectations.md # provenance, scoring and replay protocol
 ```
 
 ## Known limits
