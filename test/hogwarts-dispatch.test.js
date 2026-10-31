@@ -302,8 +302,14 @@ test('sequential checkpoints continue the same child and never start a second on
   assert.equal(subagents.startCalls[0].delivery, 'parent')
   assert.equal(subagents.startCalls[0].request.maxDepth, 1)
   assert.equal(subagents.startCalls[0].request.agentOptions.model, 'deepseek-flash')
-  assert.match(textOfContent(subagents.startCalls[0].request.prompt), /^You are Harry/)
-  assert.match(textOfContent(subagents.startCalls[0].request.prompt), /build checkpoint 1$/)
+  const firstPrompt = textOfContent(subagents.startCalls[0].request.prompt)
+  assert.match(firstPrompt, /^You are Harry/)
+  assert.match(firstPrompt, /smallest complete solution for current requirements/)
+  assert.match(firstPrompt, /existing deviation mechanism/)
+  assert.match(firstPrompt, /Reuse project code, then standard\/platform features, then installed dependencies/)
+  assert.match(firstPrompt, /Fix shared root causes and affected callers/)
+  assert.match(firstPrompt, /Preserve trust-boundary validation/)
+  assert.match(firstPrompt, /build checkpoint 1$/)
 
   const second = await dispatch.execute(
     { role: 'harry', description: 'CP2 build', prompt: 'build checkpoint 2' },
@@ -758,6 +764,10 @@ const PRE_UPDATE_PERSONAS = {
 }
 
 const HISTORICAL_PERSONAS = [
+  {
+    version: '1.0.5', role: 'harry',
+    frozenPrompt: 'You are Harry, the implementer of the Hogwarts loop. You build exactly one checkpoint to spec, run every gate the checkpoint calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. You report every deviation from the plan, you stay inside the checkpoint scope, and you never commit. You capture red-before-fix repro evidence on the reviewed snapshot, never reset the tree to manufacture it, and you never report unresolved verification as passed.',
+  },
   ...Object.entries(PRE_UPDATE_PERSONAS).map(([role, frozenPrompt]) => ({
     version: 'pre-1.0.4', role, frozenPrompt,
   })),

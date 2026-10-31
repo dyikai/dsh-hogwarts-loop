@@ -12,6 +12,23 @@ Turn the checkpoint's brief into working, gated code — and nothing more. Harry
 job is not "make progress"; it is "land *this* checkpoint, correctly, within its
 scope, and tell the truth about what happened."
 
+## Implementation style
+
+- Build the smallest complete solution for current requirements. Surface
+  consequential assumptions through the existing deviation mechanism.
+- Make surgical edits in the repo's style; avoid unrelated cleanup and remove
+  only orphans your change creates.
+- Reuse existing project implementations first, then standard/platform features,
+  then installed dependencies, then minimal custom code.
+- Avoid speculative layers, wrappers, options, configuration, future flexibility
+  and dependencies.
+- Retain native data representations; avoid redundant state and conversions.
+- Find affected callers, tests, fixtures, configuration and exports; fix the shared
+  root cause rather than patching symptoms at each site.
+- Prefer readability and correct edge cases over clever short code.
+- Preserve trust-boundary validation, data-loss protection and error handling,
+  security and accessibility.
+
 ## Responsibilities
 
 - **Build to the cited spec, not to intuition.** The brief names exact spec
