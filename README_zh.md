@@ -44,6 +44,7 @@ hogwarts_dispatch({ role: "harry", description: "CP2 build", prompt: "…下一�
 [评审契约](skill/references/review-contract.md)保留几条核心规则：阻断候选先验证再修复，
 保留证据和稳定 ID，修复后独立验证，不反复重审已解决的问题。
 完整的“修复→复审”轮次与纯采证批次分别限额；正常取证不再多算一次修复轮次。
+满足条件的同问题顾问指导诊断或实施有特定优先规则，不以改代码为前提，不重置累计历史，也不豁免盲目探针 churn 或无关工作（见下文升级路径）。
 
 默认一名审查者。专家针对实际改变的风险或未解决的问题补位，不因碰到某类文件就
 自动多派一个角色。必须的人类审批仍须遵守；这些是流程指令，不是 Host 权限或运行时门禁。
@@ -124,15 +125,17 @@ plugin_manager -> { action: "remove_bundle", target: "@dyikai/dsh-hogwarts-loop"
 | `filius` | 性能评审 | `deepseek-flash` |
 | `minerva` | 并发评审 | `deepseek-flash` |
 | `argus` | 收尾 UI 走查 | `deepseek-flash` |
-| `voldemort` | 升级实现者（只解被升级的单个难题） | `deepseek-v4-pro` |
+| `voldemort` | 单问题升级顾问（只读指导） | `deepseek-v4-pro` |
 
 ### 升级路径：Voldemort
 
-给 Harry 的问题**最多三次尝试**（一次尝试 = 一轮 build → gate → review）。三次都没通过（gate 仍红，或 Severus 对**同一个根因**继续给 P1），就把这个问题**升级一次**给 `voldemort`，升级简报必须带上：checkpoint 验收标准、三次各自改了什么、每次的确切失败证据、已经排除的可能。
+Harry 对**同一个尚未解决的问题独立尝试三次**。“同根因”按稳定失败表现和验收标准关联：已知则记录根因，未知则记录待证假设；不要求升级前已经证明精确根因，换诊断假设也不重置次数。每次须有实质方案、实施及验证证据；红 gate 可以直接结束一次失败尝试，不必先绿或先进入评审。实际实施后经确认的同根因 P1 或 P2 失败也可计入；重复命令、进度消息、纯证据探针和不同根因不能凑数。第三次成功不升级；仍失败则 **Harry 必须主动把三次方案和确切失败证据报告 Albus**，不能继续内部独立自试。
 
-Voldemort 与 Harry **是完全相同的实现者**：同样的 checkpoint scope、同样的 gate、同样的「绿树 + 原始证据」、同样不提交；区别只有模型更强、以及他拿到的是三次失败的历史。他的授权是**一个具体问题，不是整份清单**：只改这个问题需要改的东西，不接手剩下的 checkpoint，不「顺手清理」，问题修好并通过 Severus 之后控制权就回到 Harry。他**最多两次尝试**，成果同样要过 Severus 才能提交。两次都失败就**停下来**：汇报问题、五次尝试（3 + 2）、证据、已排除项和可选方案 —— 不会再派第四次 Harry，也不会派第三次 Voldemort，更不会为了让 gate 变绿而偷偷扩大范围。
+Albus 带上验收标准、三次改动及失败、已排除项和当前假设，引入 `voldemort` 作为**只读的单问题升级顾问**。Voldemort 思考、诊断，给出可执行下一步、待验证假设及有界验收信号；不编辑代码、不跑构建测试、不提交、不自判闭环、不接其他 checkpoint。Albus 将方案转交**同一个 Harry 子会话**，Harry 始终负责实施和测试；再由 Albus 把实际结果及失败报告回传 Voldemort 调整思路，Severus 独立关闭修复。
 
-这两组数字写在 [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) 的 *Escalation* 一节里（技能文本即规则），角色本身则由 [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js) 的 `DEFAULT_ROLES` 定义。另有独立的 **checkpoint 修复／复审轮次预算和采证预算**，以及它们与上述尝试上限的优先级规则，见 [skill/references/review-contract.md](skill/references/review-contract.md)。
+持续协作直到问题解决，**没有固定协作轮数或总尝试上限**。保留前三次及累计历史；Albus 每轮重评，安排有界的诊断**或**实施：依据实际证据提出新／修正假设或诊断问题，指定命令、时间／场景界限和可判定信号。诊断无需先改代码，由 Harry 执行并经 Albus 回传只读顾问；验证现有证据、确认缺陷后才能授权修复。[评审契约](skill/references/review-contract.md)允许该已合法升级问题的指导工作（含纯诊断轮次）超过累计 repair／evidence 数，不因固定次数截停或再次要求人类扩额。未升级的普通 checkpoint 和无关问题仍受原预算约束；不得盲重跑、换标签凑轮或在单批内藏无限重试。范围和必要审批不变；遵守人类停止要求，诚实报告真实权限、环境或外部前置条件阻塞。
+
+[skill/SKILL.md](skill/SKILL.md) 的 *Escalation* 是流程规则，[index.js](index.js) 的 `DEFAULT_ROLES` 定义角色。这些是 **agent 工作契约，不是运行时 ACL 或自动计数器**。Harry/Voldemort 续接会重发当前 persona，旧子角色也一样，不替换 child 或创建时模型；冻结的旧 persona 只用于识别历史身份。
 
 > 表单写入的是 **profile 的该插件条目**（`cordis.patch.yml` 里的 `hogwarts-loop` 行）。想手工改或批量改也可以直接写那行的 `config`，字段定义见 `index.js` 里导出的 `Config`。
 

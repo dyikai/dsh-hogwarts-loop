@@ -40,7 +40,9 @@ Rules of dispatch:
 - The first `prompt` includes the role instructions, scope, spec references,
   conventions, gates, and constraints. Later briefs give the next scope or
   findings and changed constraints; the child retains its own history but does
-  not automatically see Albus's conversation.
+  not automatically see Albus's conversation. The tool prepends the current
+  Harry/Voldemort persona on continuations too, superseding historical role
+  instructions without replacing the child or its creation-time model.
 - CP completion, an idle/inactive child, context compaction, and returning from
   a Voldemort escalation are **not** reasons to create another Harry.
 - Dispatch is nonblocking. Wait for the relevant delivery before assigning that
@@ -117,11 +119,11 @@ to this loop, not its job).
   non-origin validator confirms them; the reviewer never validates his own. The
   one reviewer who touches a build is Argus, and only to launch the artifact
   Harry already built.
-- **Escalation implementer — Voldemort.** Behaves exactly like Harry — same
-  gates run during development, same green tree plus raw evidence, never commits
-  — but he runs on the stronger model configured for his seat and is dispatched
-  for **one unresolved problem**, never for the implementer's remaining work
-  (see *Escalation* below). His work is still reviewed by Severus.
+- **One-problem escalation advisor — Voldemort.** Read-only thinking, diagnosis
+  and executable advice after Harry's three failed independent attempts on the
+  same unresolved problem. He never edits code, runs builds/tests, commits, self-closes a
+  fix or takes other checkpoints. Albus relays advice and actual evidence;
+  Harry always implements and tests, and Severus independently closes the fix.
 
 Keep every role as a **distinct subagent with persistent context** across the
 whole parent session. Each checkpoint is a new assignment, not a new agent.
@@ -141,48 +143,54 @@ planning gates, preparing a delivery, or auditing its complexity report.
 
 ### Escalation: Voldemort
 
-Harry gets **three attempts** on a problem. One attempt is one
-build → gate → review round on the same root cause: you dispatch him, he returns
-a green tree with evidence, Severus rules. A green tree + APPROVE ends the
-problem at whatever attempt it lands, so a third attempt that passes never
-escalates.
+Harry makes **three independent attempts** on the same unresolved problem
+before advisor-guided collaboration. **Same-root** is operationally tracked by a
+stable problem/failure and acceptance criteria: record the proven root when known,
+or the current unproven hypothesis. Proving the exact root is not an escalation
+prerequisite; changing diagnostic hypotheses does not reset attempts. Independent,
+unrelated defects cannot be combined or borrow this problem's budget precedence.
+One attempt has a substantive approach, implementation and validation evidence. A red gate can end a failed attempt;
+neither a green tree nor entry into review is required to count it. An independently
+confirmed same-root P1 **or P2** remaining after implementation can also establish
+failure. Repeating commands, progress messages, evidence-only probes and unrelated
+new roots do not add attempts. A successful third attempt does not escalate;
+a green gate alone does not close a known unresolved finding.
 
-If the **third** attempt still fails — the gate stays red, or Severus keeps
-returning P1 findings on the *same* root cause rather than on new work — stop
-retrying Harry and escalate once to `voldemort`.
+If the **third attempt still fails, Harry must promptly report to Albus**, not
+continue private independent retries. Albus records the history and brings in
+`voldemort` for **one problem**, with:
 
-Voldemort is **the same kind of worker as Harry**, not a different one: hand him
-the working contract you would give Harry (scope, gates, evidence, no commit) and
-the only differences are the model behind him and the history he receives. The
-escalation brief is not the spec again; it must carry:
+- the checkpoint spec, acceptance criteria and concrete unresolved problem,
+  with its proven root or still-unproven diagnostic hypotheses,
+- each of Harry's three approaches and changes (paths and shape of fix),
+- exact validation/failure evidence, including red gates or confirmed findings,
+- ruled-out possibilities, current hypothesis and relevant scope/approval limits.
 
-- the checkpoint spec and its acceptance criteria,
-- what Harry changed in **each** attempt (paths and the shape of each fix),
-- the exact failure evidence for each attempt (gate output, Severus's findings),
-- what you have already ruled out, and the current working hypothesis.
+Voldemort is a **read-only advisor**, not a replacement implementer. He inspects,
+thinks, diagnoses and returns an executable next-step plan, hypotheses to validate,
+a bounded validation scenario and acceptance signals. He never edits code, runs
+builds/tests, commits, declares closure or takes another checkpoint. Albus relays
+his advice to **the same Harry child**; Harry implements, tests and returns actual
+changes and evidence. Albus sends the results and failure report back to Voldemort,
+who adjusts the approach. Severus independently reviews and closes the fix; an
+advisor's confidence or Harry's green claim cannot replace closure.
 
-Voldemort's mandate is **one problem, not the checklist**. His brief names the
-single unresolved problem and he may change only what that problem needs:
+Continue this collaboration until the problem is solved: **no fixed two-round or
+total-attempt cap**, and no independent-phase limit truncates Harry's guided work.
+Keep the first three attempts and cumulative totals; never reset history. Albus
+reassesses each round and authorizes bounded diagnosis **or** implementation with
+an evidence-driven new/revised hypothesis or diagnostic question, named commands,
+time/scenario limits and decidable signals. Diagnosis need not change code; Harry
+executes and reports, and evidence is validated before repair is authorized.
+Never blindly repeat ineffective work. Honor a
+human stop request, and honestly report real permission, environment or external
+prerequisite blockers rather than claiming completion.
 
-- do not hand him the remaining checkpoints,
-- do not let him "clean up while he is here" or refactor beyond the problem,
-- once that problem is green and Severus approves it, control returns to Harry
-  for everything else — Voldemort is not kept on the checkpoint,
-- he is never dispatched for an ordinary checkpoint that Harry has not failed
-  three times.
-
-Voldemort gets **at most two attempts**. His result still goes through Severus
-before you commit. If the second Voldemort attempt also fails, **stop**: report
-back to the user with the problem statement, the five attempts (3 × Harry,
-2 × Voldemort), the evidence, what was ruled out, and the options you see. Do not
-dispatch a fourth Harry, do not dispatch a third Voldemort, and do not quietly
-widen the checkpoint scope to make it pass.
-
-These are **same-root attempt limits**. They are separate from the
-checkpoint-wide convergence cap below: one counts attempts on a problem, the
-other bounds complete repair/re-review rounds and evidence batches. Neither resets
-the other, and a cap hit is never a reason to escalate without same-root failure
-evidence.
+`review-contract.md` defines the narrow precedence over the ordinary repair cap
+and evidence budget, including eligible diagnostic-only rounds. Unescalated work,
+blind probe churn and unrelated problems do not receive this exception;
+unrelated roots cannot borrow this problem's collaboration allowance. These are
+agent work contracts, **not runtime ACLs or automatic attempt counters**.
 
 ### Review discipline
 

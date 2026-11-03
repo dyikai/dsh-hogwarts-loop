@@ -48,10 +48,11 @@ A repair claim is not independent closure.
 
 ## E5 — Next action
 
-- **A:** rounds=3, evidence=0, failed same-root attempts=3. No fourth automatic
-  repair. Reassess with `F-auth` still blocking; a bounded human-authorized
-  continuation may use the once-only Voldemort escalation, preserving all counts.
-  It cannot grant a fourth Harry attempt or more than two Voldemort attempts.
+- **A:** rounds=3, evidence=0, independent failed attempts=3 on one root. Harry
+  reports to Albus, who brings in the read-only advisor with all three approaches
+  and failures. Albus may relay the next bounded plan to the same Harry without
+  a human budget-extension approval. The ordinary repair cap does not truncate
+  eligible guided work. `F-auth` remains blocking until independent closure.
 - **B:** rounds=1, evidence=1. A second bounded evidence batch is allowed. If it
   confirms the new defect, a second repair/re-review round remains available.
   Do not stop because evidence plus repair supposedly consumed two repair rounds;
@@ -61,6 +62,35 @@ A repair claim is not independent closure.
   Continuing needs explicit human authorization, a changed approach and a finite
   budget. Counts remain visible.
 
-Also distinguish an already delivered third repair from a fourth author action:
-its closure verdict must still be obtained and may approve the checkpoint. E5
-checks decision conformance only; it does not measure real agent convergence.
+- **D:** cumulative rounds=6, evidence=0, independent failures=3, guided rounds=3.
+  Albus returns actual failures to Voldemort for revised advice, reassesses and
+  arranges bounded guided round 4; the same Harry implements/tests and Severus
+  independently closes. No two-advisor-round, five-total-attempt or three-repair
+  cutoff, no counter reset and no recurring human-extension approval. No blind
+  repetition; keep the established scope and any mandatory approvals.
+- **E:** rounds=3, evidence=0; attempt three succeeded and was independently closed.
+  No escalation; follow normal checkpoint approval/commit rules.
+- **F:** rounds=3, evidence=0, failed attempts per root=1. No escalation: unrelated
+  roots do not sum to three. Ordinary repair cap applies; reassess/stop or obtain
+  a finite human-authorized extension, not this problem's collaboration allowance.
+- **G:** rounds=0, evidence=2, independent failures=3 for the same stable problem.
+  Red gates can end attempts before review; P2 acceptance failures qualify, and
+  the precise root need not already be proven. Changed diagnostic hypotheses do
+  not reset the history. Albus may relay a bounded diagnostic-only round to the
+  same Harry at evidence=2, without requiring code changes or human budget-extension
+  approval. Even after three more guided diagnostic rounds (rounds=0, evidence=5,
+  independent failures=3, guided rounds=3), Albus may authorize the next bounded
+  diagnosis on this same problem. Each needs an evidence-driven new/revised
+  hypothesis or diagnostic question, named commands, time/scenario limits and
+  decidable signals; Harry executes/reports, Voldemort only analyzes, and Albus
+  reassesses before the next round. Preserve totals, validate evidence before
+  authorizing repair and obtain Severus's independent closure. Do not blindly
+  repeat, hide unbounded retries, or extend this allowance to ordinary C or
+  unrelated problems. No approval while the required gate is red.
+- **H:** rounds=2, evidence=1, independent failures=2, not seven. Reruns/messages
+  and the probe do not add attempts. No escalation yet; a third substantive
+  independent implementation is permitted within the ordinary repair budget.
+
+Also obtain the closure verdict on an already delivered third repair; it may
+approve the checkpoint. E5 checks declared decision conformance only; it does not
+run agents, enforce behavior or measure real agent convergence.

@@ -319,7 +319,9 @@ test('sequential checkpoints continue the same child and never start a second on
   assert.equal(subagents.startCalls.length, 1)
   assert.equal(subagents.sendCalls.length, 1)
   assert.equal(subagents.sendCalls[0].childId, first.childId)
-  assert.deepEqual(subagents.sendCalls[0].content, [{ type: 'text', text: 'build checkpoint 2' }])
+  assert.deepEqual(subagents.sendCalls[0].content, [{
+    type: 'text', text: composePrompt(DEFAULT_ROLES.harry.persona, 'build checkpoint 2'),
+  }])
 
   const third = await dispatch.execute(
     { role: 'harry', description: 'CP2 fix round', prompt: 'fix the review findings' },
@@ -329,6 +331,50 @@ test('sequential checkpoints continue the same child and never start a second on
   assert.equal(third.childId, first.childId)
   assert.equal(subagents.startCalls.length, 1)
 })
+
+// These check actual transport payloads, not whether an agent follows the contract.
+for (const role of ['harry', 'voldemort']) {
+  test(`${role} receives its current contract at creation and after plugin reload`, async () => {
+    const parent = new FakeSession(`parent-current-contract-${role}`)
+    const subagents = new FakeSubagents()
+    const firstCtx = makeCtx({ subagents })
+    const first = await createDispatcher(firstCtx.ctx, makeConfig()).execute(
+      { role, prompt: 'first task' }, makeExec(parent),
+    )
+    assert.equal(textOfContent(subagents.startCalls[0].request.prompt),
+      composePrompt(DEFAULT_ROLES[role].persona, 'first task'))
+    const reloaded = await import('../index.js?advisor-contract-reload')
+    const nextCtx = makeCtx({ subagents })
+    const next = await reloaded.createDispatcher(nextCtx.ctx, makeConfig()).execute(
+      { role, prompt: 'next task' }, makeExec(parent),
+    )
+    assert.equal(next.childId, first.childId)
+    assert.equal(subagents.startCalls.length, 1)
+    assert.deepEqual(subagents.sendCalls[0].content, [{
+      type: 'text', text: composePrompt(reloaded.DEFAULT_ROLES[role].persona, 'next task'),
+    }])
+    if (role === 'harry') {
+      assert.match(DEFAULT_ROLES[role].persona, /report to Albus/)
+      assert.match(DEFAULT_ROLES[role].persona, /red gate can end a failed attempt/)
+    } else {
+      assert.equal(DEFAULT_ROLES[role].seat, 'one-problem escalation advisor')
+      assert.match(DEFAULT_ROLES[role].persona, /never edit code, run builds or tests/)
+      assert.match(DEFAULT_ROLES[role].persona, /Harry implements and verifies/)
+    }
+  })
+}
+
+for (const role of Object.keys(DEFAULT_ROLES).filter(role => !['harry', 'voldemort'].includes(role))) {
+  test(`${role} continuation still sends only the task`, async () => {
+    const parent = new FakeSession(`parent-task-only-${role}`)
+    const { ctx, subagents } = makeCtx()
+    const dispatch = createDispatcher(ctx, makeConfig())
+    const first = await dispatch.execute({ role, prompt: 'first' }, makeExec(parent))
+    const next = await dispatch.execute({ role, prompt: 'next' }, makeExec(parent))
+    assert.equal(next.childId, first.childId)
+    assert.deepEqual(subagents.sendCalls[0].content, [{ type: 'text', text: 'next' }])
+  })
+}
 
 test('config changes do not replace a child and a continued result does not claim the new route', async () => {
   const parent = new FakeSession('parent-config-change')
@@ -764,6 +810,15 @@ const PRE_UPDATE_PERSONAS = {
 }
 
 const HISTORICAL_PERSONAS = [
+  // Frozen d98e59d identities: historical implementer contracts, not current policy.
+  {
+    version: '1.0.6', role: 'harry',
+    frozenPrompt: 'You are Harry, the implementer of the Hogwarts loop. You build exactly one checkpoint to spec, run every gate the checkpoint calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. You report every deviation from the plan, you stay inside the checkpoint scope, and you never commit. You capture red-before-fix repro evidence on the reviewed snapshot, never reset the tree to manufacture it, and you never report unresolved verification as passed. Implement the smallest complete solution for current requirements; surface consequential assumptions through the existing deviation mechanism. Make surgical edits in repo style, removing only orphans your change creates. Reuse project code, then standard/platform features, then installed dependencies, then minimal custom code; avoid speculative layers, wrappers, options, configuration, flexibility or dependencies. Keep native data representations without redundant state or conversions. Fix shared root causes and affected callers, tests, fixtures, configuration and exports. Prefer readable code and correct edge cases over clever brevity. Preserve trust-boundary validation, data-loss protection and error handling, security and accessibility.',
+  },
+  {
+    version: '1.0.6', role: 'voldemort',
+    frozenPrompt: 'You are Voldemort, the escalation implementer of the Hogwarts loop. You work exactly as Harry does — you build one change to spec, run every gate it calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. Two things differ: you run on the stronger model configured for this seat, and you are woken for ONE specific problem the implementer already failed three times — never to take over his remaining work. Your brief names that problem; you fix that problem and nothing else, you do not pick up other checkpoints, you do not "clean up while you are here", and when the problem is resolved and reviewed you stop and hand control back. You report every deviation, you stay inside the escalated scope, and you never commit. The checkpoint convergence cap and the same-root attempt limits are separate counters; you never reset either.',
+  },
   {
     version: '1.0.5', role: 'harry',
     frozenPrompt: 'You are Harry, the implementer of the Hogwarts loop. You build exactly one checkpoint to spec, run every gate the checkpoint calls for (build, tests, lint, fmt) during development, and hand back a green tree with the raw evidence. You report every deviation from the plan, you stay inside the checkpoint scope, and you never commit. You capture red-before-fix repro evidence on the reviewed snapshot, never reset the tree to manufacture it, and you never report unresolved verification as passed.',
@@ -788,6 +843,8 @@ for (const { role, frozenPrompt, version } of HISTORICAL_PERSONAS) {
       frozenPrompt,
       `the ${role} persona changed, so this test must exercise the legacy identity path`,
     )
+    assert.ok(Object.isFrozen(DEFAULT_ROLES[role].legacyPersonas))
+    assert.ok(DEFAULT_ROLES[role].legacyPersonas.includes(frozenPrompt))
     const parent = new FakeSession(`parent-frozen-${version}-${role}`)
     const childId = `frozen-${version}-${role}`
     parent.catalog(childId, { label: 'old assignment' })
@@ -814,6 +871,10 @@ for (const { role, frozenPrompt, version } of HISTORICAL_PERSONAS) {
     assert.equal(subagents.startCalls.length, 0)
     assert.equal(subagents.sendCalls.length, 1)
     assert.deepEqual(sessionQuery.readCalls, [childId], 'each version must read its own frozen prompt')
+    const expected = ['harry', 'voldemort'].includes(role)
+      ? composePrompt(DEFAULT_ROLES[role].persona, 'next brief')
+      : 'next brief'
+    assert.deepEqual(subagents.sendCalls[0].content, [{ type: 'text', text: expected }])
   })
 }
 
@@ -1113,6 +1174,11 @@ test('apply registers the projection, skill, and the started/continued output co
   assert.equal(registeredProjection.key, PROJECTION_KEY)
   assert.equal(registeredProjection.stateVersion, 2)
   assert.equal(registeredTool.name, 'hogwarts_dispatch')
+  assert.match(registeredTool.description, /read-only one-problem escalation advisor/)
+  assert.doesNotMatch(registeredTool.description, /at most two attempts|same duties as Harry/)
+  assert.match(registeredTool.parameters.properties.role.description, /one-problem escalation advisor/)
+  assert.match(registeredTool.parameters.properties.prompt.description, /read-only advice/)
+  assert.match(registeredTool.parameters.properties.prompt.description, /stable problem\/acceptance failure/)
   assert.deepEqual(registeredTool.output.schema.required, ['role', 'action', 'childId'])
   assert.deepEqual(registeredTool.output.schema.properties.action.enum, ['started', 'continued'])
   assert.equal(inject.includes('sessionProjections'), true)

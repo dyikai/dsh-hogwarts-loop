@@ -120,7 +120,8 @@ and the affected path, not the rest of the module.
 
 ## E5 — Next action
 
-Treat these as three independent checkpoint histories, using the default budgets:
+Treat these as independent checkpoint histories, using the default budgets and
+one-root advisor-guided precedence. The facts below are supplied, not discoveries:
 
 - **A:** Three author repairs each received an independent re-review. The same
   confirmed P1 authorization defect `F-auth` remains open after the third verdict.
@@ -131,6 +132,30 @@ Treat these as three independent checkpoint histories, using the default budgets
   premise needs execution. No implementation attempt failed on the new root.
 - **C:** Two bounded evidence-only batches failed to settle a required timing
   question. No repair has been attempted; the question still blocks acceptance.
+- **D:** A's problem has since had three advisor-guided Harry implementations,
+  each with a changed hypothesis, substantive code changes, bounded validation
+  and an independent failing re-review. It is still open. Voldemort supplied only
+  advice through Albus, and Harry's existing child did every edit and test. No
+  evidence-only batches have been used. There is no human stop or real blocker.
+- **E:** Independent attempt three on one problem passed its gates and Severus
+  independently closed it. Three completed repair/re-review rounds, no probes.
+- **F:** Three completed failed repair/re-review rounds concern three unrelated
+  root causes: one substantive independent attempt per root, no probes.
+- **G:** Harry's three different implementations for one P2 acceptance failure
+  each ended with the required gate red, before review. Two earlier evidence-only
+  batches have been used. The failure is stable but its precise root cause remains
+  unproven; the three attempts tested different diagnostic hypotheses. Harry has
+  reported and Albus has legitimately introduced Voldemort. Based on actual
+  evidence, the advisor proposes a new diagnostic question that must be settled
+  before choosing a safe repair: named commands, time/scenario limits and decidable
+  signals, no code edits. First decide at guided rounds=0. Then decide again after
+  three such bounded diagnostic rounds, each reassessed from actual results with
+  a new/revised question; evidence=5, guided rounds=3, the same acceptance failure
+  remains, and the advisor has a further evidence-driven bounded diagnostic plan.
+  There is no human stop or real external blocker; no unrelated defect is involved.
+- **H:** Harry has two substantive failed implementations on one problem, followed
+  by four command reruns, progress messages and one evidence-only probe. No third
+  implementation or re-review has occurred; rounds=2, evidence=1.
 
 For each history, give the current counters, next permitted action and any required
 approval. Explain whether escalation is applicable. Do not change the histories.

@@ -143,9 +143,24 @@ Teaching reconstruction, not a historical transcript:
 > confirmed from Harry's red integration result → independently closed after the
 > unchanged test went green on the fixed tree. Keep both source stamps.
 
-If a checkpoint instead spends **three completed repair/re-review rounds** with
-blocking findings still open, the loop stops automatic iteration and records the
-reassessment decision — the counters are preserved, new serious findings are
-still triaged, and a fourth automatic repair is not queued. That cap is separate
-from the per-problem Harry/Voldemort attempt limits; the full precedence rule is
-in `review-contract.md`.
+At **three completed repair/re-review rounds**, Albus reassesses rather than
+blindly repeating. Ordinary work stops or needs an authorized finite extension.
+But if Harry has actually failed three substantive independent implementations
+on one root (including red-gate failures before review, or confirmed P1/P2 failure
+after implementation), Harry reports that history and Albus brings in Voldemort
+as read-only advisor. The same Harry still edits and tests; Severus closes the fix.
+
+For example, guided rounds 1–3 each test a different evidence-driven hypothesis
+and still fail. Albus retains the three original attempts and all cumulative
+round/evidence counts, returns the actual failures to Voldemort and arranges a
+bounded diagnostic-only or implementation round 4 for Harry from revised advice:
+a new/revised question, named commands, time/scenario limits and decidable signals.
+Diagnosis requires no code edits; validate results before authorizing a repair.
+No fixed two-advisor-round or
+total-attempt limit ends the work, and no routine budget-extension approval is
+needed for that eligible problem, even when earlier rounds exhausted evidence
+counts. Blind probe churn, unescalated work and unrelated problems do not inherit
+this allowance (`review-contract.md`). If independent attempt three
+instead succeeds, normal independent closure follows without escalation. Three
+failures on three different roots do not trigger it either. This is a teaching
+decision example, not evidence of real agent convergence.

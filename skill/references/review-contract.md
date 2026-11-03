@@ -81,26 +81,75 @@ Progress messages and raw log chunks do not count as new reports. A response tha
 only supplies evidence is not a contest/no-change repair response.
 
 - Always allow the re-review that closes an already delivered repair, including
-  the third. If it approves, pass. If the third completed repair round still has
-  blockers, do not dispatch a fourth repair automatically.
-- After two evidence batches, already-confirmed work may still be repaired within
-  its remaining round budget. If required evidence remains unresolved, stop and
-  reassess; do not issue a third evidence-only batch automatically. Exhausting
-  evidence budget is not an implementation failure or grounds for escalation.
-- At either limit, state what remains open and whether the approach, scope or
-  review is at fault. Stop/report, or obtain explicit human authorization for a
-  changed approach, a finite additional budget and a stop condition. Keep counts
-  and unresolved findings across re-scoping, reviewer changes and escalation.
-- The separate same-root Harry (3) / Voldemort (2) attempt limits in `SKILL.md`
-  remain absolute. Escalation requires actual failed implementation attempts on
-  that root, not review churn or probes. If both limits apply, satisfy both; a
-  human extension of the checkpoint budget does not add implementation attempts.
+  the third. If it approves, pass. Otherwise apply the ordinary stop rule or the
+  narrowly eligible advisor-guided collaboration below before more author work.
+- For ordinary work outside the eligible collaboration below, after two evidence
+  batches already-confirmed work may still be repaired within its remaining round
+  budget. If required evidence remains unresolved, stop and reassess; do not issue
+  a third evidence-only batch automatically. Exhausting evidence budget is not an
+  implementation failure or grounds for escalation.
+- At either ordinary limit, state what remains open and whether the approach,
+  scope or review is at fault. Stop/report, or obtain explicit human authorization
+  for a changed approach, finite additional budget and stop condition. Preserve
+  counts and unresolved findings across re-scoping, reviewer changes and escalation.
 
-Examples: one successful repro and repair uses rounds=1, evidence=1. A second new
-runtime finding may use the second evidence batch and a second repair round.
-Two inconclusive probes stop further automatic probing even at rounds=0. Three
-failed repair/re-review rounds stop a fourth repair, but never suppress a new
-serious finding or the final closure verdict.
+### Precedence: one established root in advisor-guided collaboration
+
+Here **same-root** means the same stable problem/failure and acceptance criteria
+(`SKILL.md`), with a proven root or explicitly unproven hypotheses. Precise root
+proof is not required before escalation; a changed diagnostic hypothesis does not
+reset attempts. Unrelated independent defects remain separate.
+
+The three independent attempts in `SKILL.md` count substantive approaches,
+implementation and validation evidence on one root, **not review rounds**. A red
+gate can end an attempt before review; confirmed same-root P1 or P2 failures can
+also qualify. Probes alone, repeated commands, messages and unrelated roots cannot.
+A third attempt that succeeds does not escalate. Harry actively reports the third
+failure to Albus; he does not keep retrying independently.
+
+Once Albus checks that three genuine same-root failures occurred and brings in
+Voldemort as read-only advisor, **that problem's guided diagnosis or implementation
+takes precedence over ordinary repair and evidence caps**. Do not stop it under an old
+two-Voldemort, five-total-attempt or independent-phase limit. There is no fixed
+collaboration-round or total-attempt cap, nor a fresh human-permission request at
+every multiple of a budget. Harry remains the same implementer/test-runner child;
+Voldemort diagnoses and advises through Albus, and Severus independently closes.
+
+Albus records the original attempts, cumulative repair/evidence totals and guided
+rounds without resetting them. Before **each** guided round he reassesses actual
+results and relays the advisor's new or revised hypothesis or diagnostic question
+for this same stable problem. Authorize a bounded diagnosis or implementation:
+name the commands, time/scenario limits and decidable acceptance or diagnostic
+signals. Harry executes and returns actual results/failures and any code changes;
+Albus sends these to the read-only advisor before deciding the next step. Guided
+diagnosis does not require code changes, even when the precise root is unknown.
+Inspect and validate the evidence before authorizing repair; guidance never
+licenses fixing an unconfirmed new defect.
+
+Such guided diagnosis or implementation **may exceed ordinary cumulative
+repair/evidence totals**, including diagnostic-only rounds. Do not stop solely on
+those totals or demand another human budget extension at fixed intervals. The
+exception is for evidence-driven next questions on this already eligible problem,
+not blind probe churn: do not repeat ineffective probes without a new/revised
+hypothesis or diagnostic question justified by actual evidence, relabel an old
+request, or hide unlimited retries in a batch. Inconclusive/setup-failed results
+still count and must inform Albus's reassessment; they are not automatic passes.
+Unescalated work and unrelated problems still obey ordinary budgets. New candidates
+still require validation before repair; unrelated ones cannot borrow the exception
+merely because another problem entered collaboration.
+
+Scope, evidence, mandatory approvals and independent closure do not weaken. Honor
+human stop requests and honestly report real permission, environment or external
+prerequisite blockers; never fabricate completion. These are agent instructions,
+not tool ACLs or runtime counters.
+
+Examples: one successful repro and repair uses rounds=1, evidence=1. For ordinary
+unescalated work, two inconclusive probe-only batches stop further automatic
+probing even at rounds=0. Three repair rounds on different roots do not establish
+escalation eligibility. Three genuine failures on one problem do: Albus can
+arrange later **Harry** diagnostic-only or implementation rounds under advisor
+guidance without a budget-extension approval, while retaining the totals. Always obtain the final closure verdict and triage
+new serious findings.
 
 ## Feedback
 

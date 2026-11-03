@@ -49,13 +49,13 @@ window.__ModuleLoader__.load({
       rejected: 'The Host rejected these values. Check that the provider, model, and reasoning effort are all supported by that provider.',
       summary: 'Per-role model routing for the Hogwarts loop.',
       catalogError: 'Model catalog unavailable — type the ids instead.',
-      'seat.harry': 'Implementer',
+      'seat.harry': 'Implementer (code and tests)',
       'seat.severus': 'Reviewer (correctness)',
       'seat.alastor': 'Security',
       'seat.filius': 'Performance',
       'seat.minerva': 'Concurrency',
       'seat.argus': 'UI walkthrough',
-      'seat.voldemort': 'Escalation implementer (one problem)',
+      'seat.voldemort': 'Escalation advisor (one problem, read-only)',
     }
     const ZH = {
       title: '霍格沃茨循环',
@@ -81,13 +81,13 @@ window.__ModuleLoader__.load({
       rejected: 'Host 拒绝了这些值，请检查 Provider / 模型 / 推理强度 是否都是该 provider 支持的值。',
       summary: '霍格沃茨循环的按角色模型配置。',
       catalogError: '读不到模型目录，先手工填 provider / 模型 id。',
-      'seat.harry': '实现者',
+      'seat.harry': '实现者（实施与测试）',
       'seat.severus': '主评审（正确性）',
       'seat.alastor': '安全评审',
       'seat.filius': '性能评审',
       'seat.minerva': '并发评审',
       'seat.argus': 'UI 走查',
-      'seat.voldemort': '升级实现者（只解被升级的单个难题）',
+      'seat.voldemort': '升级顾问（单个难题，只读指导）',
     }
 
     /** Effort ids used when the catalog does not describe the selected model. */

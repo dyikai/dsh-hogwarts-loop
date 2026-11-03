@@ -61,7 +61,9 @@ ablation gate in `ablation.md`; missing required experiments are not review-read
 `review-contract.md` owns validation, closure and budgets. Albus validates candidates
 between D and E; Harry executes probes and repairs. Count a repair round only
 when the author response receives its re-review verdict. Evidence-only batches
-use a separate finite allowance; neither budget resets same-root attempt counts.
+use a separate finite allowance; neither budget resets same-root attempt history.
+For the one established root in advisor-guided collaboration, use the narrow
+repair/evidence precedence in `review-contract.md`, not an unconditional cap.
 
 ## The handoff payloads
 
@@ -128,7 +130,9 @@ batch, not an unconfirmed repair. Preserve the evidence count across repair roun
 ### E — orchestrator → Harry: *bounded request*
 - Confirmed defects to fix, by ID; or explicitly evidence-only questions.
 - Required proof, scope, and any rejected deviation or adjudication.
-- Remaining repair/evidence budgets and any human-authorized extension.
+- Cumulative repair/evidence counts, ordinary remaining budgets or authorized
+  extension; for an eligible guided root, its history, reassessment, bounded next
+  implementation/validation and the narrow precedence being applied.
 
 ### F — Harry → orchestrator: *response*
 - For a repair: changes by ID, relevant regression/gate evidence and final stamp;
@@ -141,6 +145,41 @@ A fix report proposes closure; it never self-closes. Send repairs back through C
 for independent re-review and count the completed round then. Evidence-only results
 consume their own allowance, not a repair round. Always obtain the closure verdict
 for an already delivered repair; apply the stop rule before further author work.
+
+### Escalation edges — one root, Harry remains the author
+
+A red B/F report can finish a failed independent attempt without entering C.
+Track a stable problem/failure and acceptance criteria, with proven root or
+unproven hypotheses; exact root proof is not a prerequisite and changing hypotheses
+does not reset attempts (`SKILL.md`). After three substantive failed independent
+approaches on that same problem, Harry must report to Albus before further
+independent retries. Confirmed same-root P1
+or P2 failures after implementation can qualify too; unrelated roots, repeated
+commands, messages and evidence-only probes cannot. If attempt three succeeds,
+continue normal closure without escalation.
+
+1. **Harry → Albus:** root/spec/acceptance, each approach and actual changes,
+   validation stamps/raw failures, ruled-out causes and current hypothesis.
+2. **Albus → Voldemort:** that history and scope/approval boundaries; request
+   read-only diagnosis, executable advice, testable hypotheses, bounded validation
+   and acceptance signals. No editing, build/test execution or other checkpoint.
+3. **Voldemort → Albus → same Harry:** the next bounded diagnosis or implementation
+   plan. Harry alone executes, returning actual results/failures, any code changes
+   and unresolved hypotheses; Albus relays these to Voldemort for analysis. A
+   diagnostic-only round need not edit code; validate evidence before authorizing
+   repair.
+4. **Albus → Severus:** only once Harry's repair is review-ready, use C for
+   independent closure. Neither the advisor nor Harry self-closes the fix.
+
+Repeat guided rounds until solved, with no fixed round/total-attempt cap or
+independent-phase cutoff. Albus keeps all historical totals, reassesses each
+round and sets a new/revised hypothesis or diagnostic question with named commands,
+time/scenario limits and decidable signals; never blindly repeat ineffective work.
+`review-contract.md` lets guided diagnosis or implementation on this eligible
+problem exceed cumulative repair/evidence counts without requiring code edits first.
+Unescalated or unrelated work and blind probe churn cannot borrow the exception.
+Honor human stops and honestly report real permission, environment or external
+prerequisite blockers. These instructions do not create runtime ACLs or counters.
 
 ## Transport — how the edges physically run
 
@@ -155,7 +194,10 @@ The payloads above are messages between real agents. In this Harness,
 - **Continue at every later edge.** Call `hogwarts_dispatch` with the same role
   for the next CP, findings relay, or re-review. Its childId remains the same;
   `description` supplies the first display label, not a new identity; later
-  briefs do not relabel the child. Finishing a CP or
+  briefs do not relabel the child. Harry/Voldemort continuations also prepend the
+  current persona, superseding old implementer/escalation instructions while
+  retaining history, binding and creation-time model. Other roles keep task-only
+  continuation transport. Finishing a CP or
   becoming inactive does not end the child's conversation. Never bypass reuse
   by invoking a different spawning tool.
 - **Recover, do not replace.** Resuming the same parent session recovers the
@@ -191,8 +233,10 @@ everything."
 in development.** He builds, so he builds-and-tests; every test the checkpoint
 needs is written, built and run before the delivery report, and a checkpoint
 whose gate is red is simply not ready — it never enters review. Albus bounces
-a red delivery at edge B (the one exception: a red Harry declares as
-pre-existing or environmental, which Albus rules on). Severus verifies gates by
+a red delivery at edge B, while counting a substantive same-root failed attempt
+and routing the third-failure report to the advisor rather than endless independent
+retries (declare pre-existing/environmental reds for Albus to rule on).
+Severus verifies gates by
 **auditing the evidence** — the exact command, the raw output (not a summary),
 a tree-state stamp that matches the diff under review, and scope honesty
 (skipped tests are not passed tests) — never by rerunning the suite and never
@@ -298,8 +342,8 @@ validator (`review-contract.md`), not a panel.
 
 **Bound author work, not message count.** `review-contract.md` limits completed
 repair/re-review rounds and evidence-only batches separately. Re-review a delivered
-repair before applying the stop rule; a limit does not authorize a bigger panel
-or reset same-root escalation attempts.
+repair before applying the ordinary stop rule or the one-root guided-work
+precedence; neither authorizes a bigger panel or resets attempt history.
 **Budget the loss when a fan-out dies.** A phase whose agents all fail together
 (rate limit, API error) usually caches nothing — the whole spend is gone.
 On a long run, prefer several smaller convenings over one giant one, and treat a
@@ -369,7 +413,9 @@ Its storage is an explicit plan-time decision (`assets/plan-template.md`):
   replaced by consensus.
 - **Before more author work:** apply the separate repair-round and evidence
   budgets in `review-contract.md`. Complete the verdict on an existing repair;
-  stop/reassess before exceeding a budget. Never suppress a new serious finding.
+  reassess before more work and apply the one-root advisor-guided precedence when
+  eligible, otherwise the ordinary stop/extension rule. Never suppress a new
+  serious finding.
 - **APPROVE:** confirm the approval gate (`review-contract.md`) is satisfied —
   every candidate accounted for, gate green on the exact state, deviations ruled,
   P2 waivers attributed, no unresolved required verification. Albus completes
@@ -504,10 +550,13 @@ loop's memory between stages, not a default repository file.
   can send Harry to fix a non-defect.
 - **One validator per finding.** "Independent validation" does not mean spawning
   an agent for every finding; that is the fan-out cost with none of the coverage.
-- **Treating review rounds as progress.** Three completed repair/re-review rounds with the same
-  blocking findings is a signal to reassess, not to queue a fourth automatic
-  round. Re-scoping or renaming the same work to reset the counter is the
-  auto-reset loophole.
+- **Treating review rounds as progress.** Reassess at the ordinary repair cap.
+  Only three genuine same-root implementation failures admit advisor-guided work;
+  further Harry rounds then need changed/refined advice and bounded validation,
+  not blind repetition or a reset of counters. Unrelated work cannot borrow it.
+- **Letting Voldemort implement.** The advisor thinks and diagnoses through Albus;
+  the same Harry edits/tests and Severus independently closes, even after many
+  guided rounds.
 - **Escalating because churn hit the cap.** Voldemort exists for same-root
   failure evidence, not for reviewer noise.
 - **Letting an agent stand in for a required human approval.** Model consensus

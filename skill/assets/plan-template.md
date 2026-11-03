@@ -36,7 +36,14 @@
 **Acceptance:** <top-level requirements this CP satisfies>
 **Ablation:** <default policy or predeclared override; baseline; measurements;
 trigger decision; experiments when triggered; validated survivor + gate stamp>
-**Review:** <completed repair/re-review rounds; evidence batches when used>
+**Review:** <cumulative completed repair/re-review rounds and evidence batches>
+**Escalation, if eligible:** <stable problem/acceptance; proven root or hypotheses;
+three independent approaches/changes/results;
+Harry's report to Albus; advisor/unchanged Harry childIds; cumulative guided rounds;
+latest advice, actual evidence and reassessment; bounded diagnosis or implementation
+(no code-edit prerequisite): new/revised question, commands, time/scenario limits
+and decidable signals; validate evidence before repair; review-contract.md
+precedence for this problem only, no counter reset or blind/unrelated-probe exemption>
 **Open findings:** <ID, severity, location, failure/guard, evidence or next step>
 **Decisions:** <validation/closure reasons; attributed P2 waiver or budget extension
 only when needed; preserve counters and same-root attempt counts>

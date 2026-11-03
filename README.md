@@ -47,7 +47,10 @@ The [review contract](skill/references/review-contract.md) keeps a few rules:
 validate blocking candidates before repair, preserve evidence and finding IDs,
 and independently check the fix rather than repeating the whole review.
 Complete repair/re-review rounds and evidence-only batches have separate budgets;
-normal proof gathering is not counted as another repair round.
+normal proof gathering is not counted as another repair round. Eligible same-root
+advisor-guided diagnosis or implementation has a narrow precedence rule, without
+a code-edit prerequisite; it is not a budget reset or exemption for blind probe
+churn or unrelated work (see Escalation below).
 
 One reviewer is the default. Specialists cover an actual changed risk or unresolved
 question, not every file in a broad category. Required human approvals remain in
@@ -130,15 +133,17 @@ Defaults (the behaviour when nothing is overridden):
 | `filius` | performance specialist | `deepseek-flash` |
 | `minerva` | concurrency specialist | `deepseek-flash` |
 | `argus` | closeout UI walkthrough | `deepseek-flash` |
-| `voldemort` | escalation implementer (one escalated problem only) | `deepseek-v4-pro` |
+| `voldemort` | one-problem escalation advisor (read-only) | `deepseek-v4-pro` |
 
 ### Escalation: Voldemort
 
-Harry gets **at most three attempts** at a problem (one attempt = one build → gate → review round). If all three fail — the gate is still red, or Severus keeps raising the **same root cause** as P1 — the problem is escalated **once** to `voldemort`. The escalation brief must carry the checkpoint acceptance criteria, what each of the three attempts changed, the exact failure evidence for each, and the possibilities already ruled out.
+Harry makes **three independent attempts on the same unresolved problem**: each needs a substantive approach, implementation and validation evidence. “Same-root” tracks stable failure and acceptance criteria, with a proven root or unproven hypotheses; exact root proof is not required, and changing diagnostic hypotheses does not reset attempts. A red gate can end a failed attempt before review; confirmed same-root P1 or P2 failures after implementation also qualify. Repeated commands, progress messages, evidence-only probes and different roots do not count. If attempt three succeeds, do not escalate. Otherwise **Harry promptly reports all three approaches and exact failure evidence to Albus**, rather than retrying independently.
 
-Voldemort is **exactly the same implementer as Harry**: same checkpoint scope, same gates, same "green tree plus raw evidence", and he does not commit either. The only differences are a stronger model and the history of three failed attempts. His mandate is **one specific problem, not the whole checklist**: he changes what that problem needs, he does not take over the remaining checkpoints, he does not "clean up while he is here", and once the problem is fixed and has passed Severus, control returns to Harry. He gets **at most two attempts**, and his work must also pass Severus before it is committed. If both fail, the loop **stops**: report the problem, the five attempts (3 + 2), the evidence, what was ruled out, and the options — no fourth Harry, no third Voldemort, and no quietly widening the scope to turn the gates green.
+Albus brings in `voldemort` as a **read-only one-problem escalation advisor**, with the spec/acceptance, changes and failures from each attempt, ruled-out causes and current hypothesis. Voldemort thinks, diagnoses and provides executable next steps, hypotheses and bounded acceptance signals; he never edits code, runs builds/tests, commits, self-closes a fix or takes other checkpoints. Albus relays advice to **the same Harry child**, who always implements/tests, then relays actual results and failure reports back so Voldemort can adjust. Severus independently closes the fix.
 
-These two numbers live in the *Escalation* section of [skill/SKILL.md](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/skill/SKILL.md) — the skill text is the rule. The cast itself is defined by `DEFAULT_ROLES` in [index.js](https://github.com/dyikai/dsh-hogwarts-loop/blob/main/index.js). The separate checkpoint-wide repair-round and evidence budgets (and their precedence with these attempt limits) are in [skill/references/review-contract.md](skill/references/review-contract.md).
+Continue until solved with **no fixed collaboration-round or total-attempt cap**. Preserve the first three attempts and cumulative history. Albus reassesses every round and arranges bounded diagnosis **or** implementation: an evidence-driven new/revised hypothesis or diagnostic question, named commands, time/scenario limits and decidable signals. Diagnosis requires no code edits; Harry executes and reports actual results to the read-only advisor through Albus, and evidence must be validated before authorizing repair. The [review contract](skill/references/review-contract.md) lets such work on this already eligible problem exceed cumulative repair/evidence counts, including diagnostic-only rounds, without recurring human-extension requests. Unescalated checkpoints and unrelated problems retain ordinary budgets; blind probe churn is not licensed. Never hide unlimited retries or blindly repeat ineffective work. Scope and mandatory approvals remain; honor human stops and report real permission, environment or external-prerequisite blockers honestly.
+
+The *Escalation* section of [skill/SKILL.md](skill/SKILL.md) is the workflow rule; `DEFAULT_ROLES` in [index.js](index.js) defines the cast. These are **agent work contracts, not runtime ACLs or automatic counters**. Harry/Voldemort continuations prepend the current persona, including for historical children, without replacing the child or its creation-time model. Frozen old personas remain for identity matching only.
 
 > The form writes this plugin's **profile row** (the `hogwarts-loop` entry in `cordis.patch.yml`). Editing that row's `config` by hand or in bulk works too; the field definitions are the `Config` export in `index.js`.
 

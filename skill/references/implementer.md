@@ -42,8 +42,9 @@ scope, and tell the truth about what happened."
 - **Run the gates — they are yours alone.** All build/test execution in the
   loop happens on your side; the reviewer audits your evidence, he does not
   rerun your suite. A red gate means the checkpoint is not ready — it never
-  enters review, so iterate until green (a pre-existing or environmental red:
-  declare it for the orchestrator to rule on, don't hide it). The brief lists
+  enters review. A red gate can still end a failed independent attempt; follow
+  the three-attempt report rule below rather than retrying privately until green.
+  Declare pre-existing/environmental reds for Albus to rule on. The brief lists
   the gate tiers and the project's gate economy (`loop.md`): iterate on the
   **fast gate**; before the delivery report run what the economy prescribes —
   cheap mode: the full gate; expensive mode: **one** full-gate run, stamped
@@ -91,6 +92,39 @@ scope, and tell the truth about what happened."
 - **Do not commit.** The orchestrator commits after review passes. You leave the
   work uncommitted in the tree.
 
+## Three independent attempts, then advisor-guided work
+
+Track one stable problem/failure and acceptance criteria, with a proven root or
+unproven hypothesis (`SKILL.md`'s operational same-root rule). You need not prove
+the exact root before escalating; changing hypotheses does not reset attempts.
+For that problem, an independent attempt requires a substantive
+approach, implementation and validation evidence. It can fail at a red gate
+without becoming green or entering review; a confirmed same-root P1 or P2 left
+unfixed after implementation can also establish failure. Repeated commands,
+progress reports, evidence-only probes and unrelated new roots do not count.
+Record each approach, changed paths, hypothesis and exact result. A successful
+third attempt does not escalate; known findings still need independent closure.
+
+If the third attempt still fails, **promptly report to Albus** with all three
+attempts and evidence. Do not start another independent retry or dispatch an
+advisor yourself. Albus brings in Voldemort as read-only advisor for this problem.
+You remain in the same child and always own implementation and tests. Execute the
+advice relayed by Albus within a bounded scenario/command/time allowance; return
+actual changes, raw validation/failure evidence, stamps and remaining hypotheses.
+Albus relays that evidence back so Voldemort can revise the plan. He never edits,
+builds/tests or self-closes; Severus independently closes your fix.
+
+Keep the first three attempts and cumulative history. Guided collaboration has no
+fixed round or total-attempt cap and is not cut short by the independent-phase
+limit; follow `review-contract.md` for the narrow repair/evidence budget precedence.
+A guided round may be bounded diagnosis or implementation for this same problem;
+diagnosis requires no code edit. Albus specifies an evidence-driven new/revised
+hypothesis or diagnostic question, commands, time/scenario limits and decidable
+signals; execute and return the actual results for reassessment. Existing evidence
+must be validated before repair is authorized. Unescalated work, blind probe churn
+and unrelated problems do not inherit this budget exception. Honor human stop requests and report real
+permission, environment or external-prerequisite blockers without inventing success.
+
 ## What good work looks like
 
 - The gate output is real and complete, including the ugly parts (a flaky
@@ -124,6 +158,8 @@ see `loop.md` for how it flows):
 6. Evidence for requested probes/fixes under `review-contract.md`; unresolved
    questions with their next step, never reported as passed.
 7. Explicit confirmation: not committed, did not exceed scope.
+8. When applicable: root-specific independent-attempt history, third-failure report
+   to Albus, and guided-round advice, actual results and unresolved hypotheses.
 
 On a **fix round** (after REQUEST-CHANGES), the report is scoped to the fix: what
 each finding's fix was (by stable ID, with a **proposed** disposition — not a
@@ -158,6 +194,9 @@ the repo's convention.
 - <e.g. frozen public API = exactly what the spec lists, nothing more>
 - <dependency direction / layering rules>
 - <no new third-party deps, or whatever applies>
+- After three substantive failed independent attempts on the same root, report
+  to Albus with evidence; do not retry independently. Under advisor guidance,
+  Harry still implements/tests in this child, with bounded validation each round.
 
 ## When done
 1. Measure complexity using `ablation.md` against <baseline>; if triggered,

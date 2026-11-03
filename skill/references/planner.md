@@ -109,6 +109,37 @@ commit discipline are the rest.
   serially; parallel review roles remain allowed. Mechanics in `loop.md`
   (Transport).
 
+### Same-root escalation — advisor, never replacement author
+
+Track substantive independent attempts against a stable problem/failure and
+acceptance criteria, not messages or completed reviews. A proven exact root is not
+required; record unproven hypotheses and do not reset attempts when they change
+(`SKILL.md`'s same-root definition). A red gate may finish a failed attempt before
+review; confirmed same-root P1 or P2 left
+unresolved after implementation can qualify. Probes alone and different roots do
+not. If attempt three succeeds, do not escalate. Harry must report a third failure
+promptly instead of privately retrying; check the actual three approaches, changes
+and validation evidence, then bring in Voldemort for that single root (`SKILL.md`).
+
+Send the advisor the spec/acceptance, full attempt history, ruled-out causes,
+current hypothesis and scope/approval constraints. Ask for read-only diagnosis,
+executable next steps, hypotheses to test and bounded acceptance signals, never
+code edits or build/test execution. Relay the plan to the **same Harry child**,
+who implements and tests; return actual changes and failure evidence to Voldemort
+for adjustment. Severus independently closes the fix. No other checkpoint goes
+to the advisor.
+
+Keep cumulative history and reassess every guided round. Apply the narrow
+repair/evidence precedence in `review-contract.md`: no fixed collaboration-round
+or total-attempt cap, no repeated human-extension request just because a counter
+crossed a multiple. Each next step may be diagnosis **or** implementation: require
+an evidence-driven new/revised hypothesis or diagnostic question, named commands,
+time/scenario limits and decidable signals. Diagnosis need not include code edits.
+Harry executes and reports; validate evidence before authorizing repair. Do not
+repackage blind probe churn or unrelated problems as collaboration. Scope, mandatory approvals and independent
+closure still apply. Honor human stops and honestly report real permission,
+environment or external-prerequisite blockers.
+
 ### 3. Judge
 
 - Apply the approval and stop rules in `review-contract.md`. In expensive-gate
@@ -181,13 +212,15 @@ For each checkpoint, in dependency order (edges are specified in `loop.md`):
 
 1. Brief Harry (edge A).
 2. Receive Harry's delivery report (edge B). Check the gate evidence first — a
-   red gate (unless ruled pre-existing/environmental) bounces straight back to
-   Harry; it never enters review.
+   red gate never enters review. Record real failed attempts even when red;
+   after the third same-root failure, route the report into advisor-guided work
+   rather than bouncing indefinitely to independent Harry retries.
 3. Brief Severus (edge C), adding a specialist only for a named coverage gap.
 4. Read the verdict (edge D), validate candidates, adjudicate deviations.
 5. For REQUEST-CHANGES, send the bounded repair or evidence request (edge E).
-   Re-review fixes, keep both budgets, and stop/reassess at their limits rather
-   than automatically dispatching more work (`review-contract.md`).
+   Re-review fixes and preserve both totals. At their limits apply ordinary
+   stop/extension rules or eligible one-root advisor-guided precedence; reassess
+   and bound each next step (`review-contract.md`).
 6. If APPROVE and the approval gate is satisfied → clean obsolete artifacts while
    preserving the active plan/carry-forward state → record feedback → commit code/tests,
    update/stamp the working plan in its storage, and update an approved durable
