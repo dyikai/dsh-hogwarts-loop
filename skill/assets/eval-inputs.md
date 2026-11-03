@@ -157,5 +157,16 @@ one-root advisor-guided precedence. The facts below are supplied, not discoverie
   by four command reruns, progress messages and one evidence-only probe. No third
   implementation or re-review has occurred; rounds=2, evidence=1.
 
+- **I:** Guided problem `F-auth` has met its scoped exit verification: Harry supplied
+  target-gate/affected-path evidence and the repair snapshot; Severus independently
+  confirmed closure. The checkpoint still has unfinished work and a red gate
+  demonstrably caused only by an unrelated feature.
+- **J:** After I, a different problem `F-cache` has zero failures, then one failed
+  independent implementation. Later it has three genuine independent failures of
+  its own. The existing Voldemort child retains `F-auth` history throughout.
+- **K:** Harry proposes closing the guided problem but its required target gate
+  remains red, or the remaining red cannot be clearly attributed to unrelated work.
+  Some other checkpoint tests pass; Voldemort believes the fix is sufficient.
+
 For each history, give the current counters, next permitted action and any required
 approval. Explain whether escalation is applicable. Do not change the histories.

@@ -91,6 +91,19 @@ A repair claim is not independent closure.
   and the probe do not add attempts. No escalation yet; a third substantive
   independent implementation is permitted within the ordinary repair budget.
 
+- **I:** Record `F-auth` as **problem closed** with its evidence and stop Voldemort
+  dispatches immediately; Harry continues independently in the same child.
+  No checkpoint APPROVE or commit while its unrelated work/gates remain incomplete.
+- **J:** `F-cache` failures=0 or 1 cannot inherit `F-auth` eligibility or guided budget
+  exception. At its own three failures, Albus may freshly authorize the same
+  Voldemort child with a new brief identifying scope/acceptance and exit verification.
+  Memory persists, not standing authorization; renaming an unresolved problem
+  cannot reset history. Genuine reopening needs the existing changed-premise/
+  new-evidence rule plus Albus's reassessment and explicit scope authorization.
+- **K:** Keep the problem open; do not close on required red verification or unclear
+  attribution to unrelated work. Advisor confidence and other passing tests cannot
+  substitute for Severus's evidence-based scoped closure or checkpoint approval.
+
 Also obtain the closure verdict on an already delivered third repair; it may
 approve the checkpoint. E5 checks declared decision conformance only; it does not
 run agents, enforce behavior or measure real agent convergence.

@@ -42,7 +42,7 @@ test('current escalation declarations replace takeover and fixed collaboration c
 test('E5 declares decisions for continued guidance, success, unrelated roots and probe churn', () => {
   const inputs = text('skill/assets/eval-inputs.md')
   const expectations = text('skill/assets/eval-expectations.md')
-  for (const label of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']) {
+  for (const label of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']) {
     assert.ok(inputs.includes(`**${label}:**`), `input ${label}`)
     assert.ok(expectations.includes(`**${label}:**`), `expectation ${label}`)
   }
@@ -55,4 +55,18 @@ test('E5 declares decisions for continued guidance, success, unrelated roots and
   assert.match(expectations, /after three more guided diagnostic rounds.*evidence=5.*next bounded diagnosis/)
   assert.match(expectations, /without requiring code changes or human budget-extension approval/)
   assert.match(expectations, /independent failures=2, not seven/)
+})
+
+test('problem-scoped advisor lifecycle declarations separate closure from checkpoint approval', () => {
+  const contract = text('skill/references/review-contract.md')
+  assert.match(contract, /problem ID or stable failure\/acceptance identifier/)
+  assert.match(contract, /problem closed.*not checkpoint APPROVE/)
+  assert.match(contract, /Immediately stop dispatching Voldemort/)
+  assert.match(contract, /required target gates.*affected paths.*unrelated/)
+  assert.match(contract, /red or attribution is unclear.*do not close/)
+  assert.match(contract, /each different problem needs its own three independent failures/)
+  const expectations = text('skill/assets/eval-expectations.md')
+  assert.match(expectations, /\*\*I:\*\*.*Harry continues independently.*No checkpoint APPROVE/)
+  assert.match(expectations, /\*\*J:\*\*.*failures=0 or 1.*same Voldemort child.*new brief/)
+  assert.match(expectations, /\*\*K:\*\*.*do not close.*unrelated/)
 })

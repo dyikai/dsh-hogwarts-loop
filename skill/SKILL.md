@@ -105,9 +105,10 @@ to this loop, not its job).
 - **Implementer — Harry.** Builds one checkpoint to spec, runs the gates (all
   build/test execution is his and happens during development — every test the
   checkpoint needs is written, built and run before delivery; a red gate never
-  enters review, so what reaches Severus is a fully green tree plus its
+  enters checkpoint approval review, which requires a fully green tree plus its
   evidence), reports what he did and every deviation, does not commit, stays
-  in scope.
+  in scope. Scoped problem closure is distinct (`review-contract.md`,
+  Problem-scoped advisor lifecycle).
 - **Reviewer — Severus** (+ the specialist bench: Alastor/security,
   Filius/performance, Minerva/concurrency, and Argus/UI-walkthrough — who runs
   once at closeout, only when the plan carries design links). Independently
@@ -160,8 +161,8 @@ If the **third attempt still fails, Harry must promptly report to Albus**, not
 continue private independent retries. Albus records the history and brings in
 `voldemort` for **one problem**, with:
 
-- the checkpoint spec, acceptance criteria and concrete unresolved problem,
-  with its proven root or still-unproven diagnostic hypotheses,
+- the checkpoint spec and stable problem ID/failure-acceptance identifier, scope,
+  exit criteria/required verification, proven root or unproven hypotheses,
 - each of Harry's three approaches and changes (paths and shape of fix),
 - exact validation/failure evidence, including red gates or confirmed findings,
 - ruled-out possibilities, current hypothesis and relevant scope/approval limits.
@@ -175,7 +176,13 @@ changes and evidence. Albus sends the results and failure report back to Voldemo
 who adjusts the approach. Severus independently reviews and closes the fix; an
 advisor's confidence or Harry's green claim cannot replace closure.
 
-Continue this collaboration until the problem is solved: **no fixed two-round or
+Guidance ends immediately at independent **problem closed**, not checkpoint
+completion; Harry continues independently. The child is retained, not a standing
+advisor. A different problem needs its own three failures and fresh Albus scope/
+exit authorization. See `review-contract.md`, **Problem-scoped advisor lifecycle**,
+for scoped closure even with demonstrably unrelated checkpoint reds.
+
+Continue this collaboration while that problem is open: **no fixed two-round or
 total-attempt cap**, and no independent-phase limit truncates Harry's guided work.
 Keep the first three attempts and cumulative totals; never reset history. Albus
 reassesses each round and authorizes bounded diagnosis **or** implementation with

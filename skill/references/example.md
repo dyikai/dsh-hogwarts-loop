@@ -163,4 +163,6 @@ counts. Blind probe churn, unescalated work and unrelated problems do not inheri
 this allowance (`review-contract.md`). If independent attempt three
 instead succeeds, normal independent closure follows without escalation. Three
 failures on three different roots do not trigger it either. This is a teaching
-decision example, not evidence of real agent convergence.
+decision example, not evidence of real agent convergence. Once that problem is
+independently closed, Albus ends guidance immediately even if unrelated checkpoint
+work remains; see `review-contract.md` (Problem-scoped advisor lifecycle).

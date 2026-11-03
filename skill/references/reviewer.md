@@ -25,6 +25,12 @@ adversarially probe the places Harry's own tests didn't reach. Rule APPROVE or
 REQUEST-CHANGES. Report findings; never fix them (Harry fixes — keeping review
 and repair separate preserves independence on the next round).
 
+A scoped **problem closed** result is not checkpoint APPROVE. For ending one
+advisor engagement before the checkpoint is complete, apply `review-contract.md`
+(Problem-scoped advisor lifecycle): read Harry's target evidence/snapshot, require
+all problem verification/affected paths satisfied and attribute remaining reds to
+unrelated work. Unclear attribution or required red verification prevents closure.
+
 ## Responsibilities
 
 - **Review against the cited spec, not vibes.** The brief names the spec sections
@@ -32,7 +38,9 @@ and repair separate preserves independence on the next round).
   standard.
 - **Audit the gates; never build.** All building and test execution is
   Harry's and happens during development — your entry condition is a fully
-  green tree (a red one never reaches you). Your job is the *evidence*: the
+  green tree for checkpoint approval review. Only scoped problem closure follows
+  the distinct lifecycle rule above; it never approves a red checkpoint.
+  Your job is the *evidence*: the
   exact command, the raw output (not a summary), a tree-state stamp that
   matches the diff you're reviewing, and scope honesty (skipped tests are not
   passed tests). Review time is read time: do not compile, do not run the

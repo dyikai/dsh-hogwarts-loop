@@ -92,8 +92,9 @@ Full template in `implementer.md`.
 - Confirmation: not committed, stayed in scope.
 
 ### C — orchestrator → Severus: *review brief*
-- Confirmation the gate is green on the state under review — a red gate never
-  crosses this edge (Albus bounces it at edge B).
+- For checkpoint approval review, confirmation the gate is green on this state.
+  Scoped problem closure uses the separate lifecycle route in `review-contract.md`;
+  it cannot yield checkpoint APPROVE.
 - How to see the diff + the baseline commit (only the unpassed changes).
 - Spec sections to check against.
 - Harry's declared deviation list (for rulings) and complexity/ablation evidence.
@@ -168,8 +169,12 @@ continue normal closure without escalation.
    and unresolved hypotheses; Albus relays these to Voldemort for analysis. A
    diagnostic-only round need not edit code; validate evidence before authorizing
    repair.
-4. **Albus → Severus:** only once Harry's repair is review-ready, use C for
-   independent closure. Neither the advisor nor Harry self-closes the fix.
+4. **Albus → Severus:** request scoped problem closure with Harry's target gates,
+   acceptance evidence and repair snapshot under `review-contract.md` (Problem-scoped
+   advisor lifecycle). Unrelated unfinished/red checkpoint work need not retain
+   the advisor; required problem verification or unclear attribution still blocks
+   closure. Albus records **problem closed** and stops advisor dispatches immediately;
+   Harry independently continues the rest. This is not checkpoint APPROVE.
 
 Repeat guided rounds until solved, with no fixed round/total-attempt cap or
 independent-phase cutoff. Albus keeps all historical totals, reassesses each
@@ -232,7 +237,8 @@ everything."
 **Ownership: all building and gate execution belongs to Harry, and it happens
 in development.** He builds, so he builds-and-tests; every test the checkpoint
 needs is written, built and run before the delivery report, and a checkpoint
-whose gate is red is simply not ready — it never enters review. Albus bounces
+whose gate is red is not ready for checkpoint approval review. Scoped problem
+closure follows the distinct lifecycle rule above. Albus bounces
 a red delivery at edge B, while counting a substantive same-root failed attempt
 and routing the third-failure report to the advisor rather than endless independent
 retries (declare pre-existing/environmental reds for Albus to rule on).
@@ -278,7 +284,8 @@ Pick the economy from the full gate's *measured* cost:
   is honesty routing, not corner-cutting: the plan states exactly which states
   the heavy net did and didn't cover.
 
-What survives in every mode: a checkpoint enters review only on green, findings
+What survives in every mode: checkpoint approval review requires green (scoped
+problem closure is separate as above), findings
 must still be *proved* (a constructed causal chain, or a failing test Harry
 writes on the reviewer's prove-or-refute request — never a vibe, and never a
 build started by the reviewer), and the committed state has a full-gate pass
@@ -527,8 +534,8 @@ loop's memory between stages, not a default repository file.
   reporter, not the code — all building and test execution is Harry's, in
   development; a reviewer who needs something run sends Harry a
   prove-or-refute request instead of compiling a PoC himself.
-- **A red gate enters review.** Review exists to find the bugs tests can't see,
-  not to discover the build is broken — bounce red deliveries at edge B.
+- **A red checkpoint seeks APPROVE.** Bounce it at edge B; do not confuse this
+  with scoped problem closure under `review-contract.md`'s lifecycle rule.
 - **Advancing with open P1/P2.** The whole point is not shipping the known bug.
 - **Faking verification you couldn't run.** State the boundary; route to manual.
 - **Losing a memo between checkpoints.** If it's not in the working plan, it's

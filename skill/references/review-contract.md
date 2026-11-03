@@ -55,12 +55,42 @@ A new repair-introduced defect gets a new ID and does not erase the old one.
 Check a demonstrated class of bug within the checkpoint; route out-of-scope
 instances explicitly instead of silently expanding the work.
 
-Approval requires accounted-for candidates, independent closure of fixes and the
+Checkpoint approval requires accounted-for candidates, independent closure of fixes and the
 full gate on the final tree. Confirmed P1s must be fixed, never waived; P2s must be
 fixed or explicitly waived by an authorized decision-maker with scope and reason.
 Required verification must be completed or explicitly risk-accepted as above;
 that cannot waive a confirmed P1 or a mandatory human approval. Carry P3s rather
 than launching cosmetic repair rounds. Model consensus is not human authorization.
+
+## Problem-scoped advisor lifecycle
+
+An escalation brief binds Voldemort to one problem ID or stable failure/acceptance
+identifier, its scope, and problem-level exit criteria with required verification.
+Unlimited guided rounds apply only while that problem remains open, not to the
+whole checkpoint or plan. Bounded diagnosis/implementation and all safety rules
+below still apply.
+
+Harry supplies the repair snapshot, required target gates and acceptance evidence,
+including affected paths. Severus may perform a scope-limited **read-only problem
+closure** while the checkpoint is unfinished or red only if the remaining work or
+failures are demonstrably unrelated and this problem's required verification and
+affected paths are satisfied. If required problem verification is red or attribution
+is unclear, do not close. No P1/P2, required proof or approval is waived. Report
+**problem closed**, not checkpoint APPROVE; the whole checkpoint still needs its
+full green gate and normal independent approval before commit.
+
+Immediately stop dispatching Voldemort when Severus independently closes the
+problem. Albus records the closure evidence and advisor exit; Harry continues
+independently in the same child without waiting for checkpoint completion. The
+Voldemort child keeps memory but has no standing task or automatic continuation;
+do not destroy or replace it. Do not send it remaining work or routine follow-up.
+
+For later use, each different problem needs its own three independent failures,
+Albus's fresh authorization and a new scoped brief to the same Voldemort child.
+Neither counts nor the guided-work budget exception transfer from a closed problem.
+Do not rename an unresolved problem to reset its history. A genuine reopening uses
+the changed-premise/new-evidence rule above; Albus must reassess eligibility and
+explicitly reauthorize its scope, never infer standing advisor authorization.
 
 ## Bound repair rounds and evidence separately
 

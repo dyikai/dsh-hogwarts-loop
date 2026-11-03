@@ -122,7 +122,11 @@ promptly instead of privately retrying; check the actual three approaches, chang
 and validation evidence, then bring in Voldemort for that single root (`SKILL.md`).
 
 Send the advisor the spec/acceptance, full attempt history, ruled-out causes,
-current hypothesis and scope/approval constraints. Ask for read-only diagnosis,
+current hypothesis, stable problem ID/acceptance, scope and exit verification.
+Apply `review-contract.md` (Problem-scoped advisor lifecycle): record independent
+closure/exit and immediately stop advisor dispatches; Harry continues independently.
+A different problem needs its own eligibility and fresh brief to the same advisor
+child, never standing authorization. Ask for read-only diagnosis,
 executable next steps, hypotheses to test and bounded acceptance signals, never
 code edits or build/test execution. Relay the plan to the **same Harry child**,
 who implements and tests; return actual changes and failure evidence to Voldemort
@@ -212,7 +216,9 @@ For each checkpoint, in dependency order (edges are specified in `loop.md`):
 
 1. Brief Harry (edge A).
 2. Receive Harry's delivery report (edge B). Check the gate evidence first — a
-   red gate never enters review. Record real failed attempts even when red;
+   red gate never enters checkpoint approval review. Scope-limited problem closure
+   follows `review-contract.md` (Problem-scoped advisor lifecycle) instead.
+   Record real failed attempts even when red;
    after the third same-root failure, route the report into advisor-guided work
    rather than bouncing indefinitely to independent Harry retries.
 3. Brief Severus (edge C), adding a specialist only for a named coverage gap.

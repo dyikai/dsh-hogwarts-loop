@@ -37,7 +37,9 @@
 **Ablation:** <default policy or predeclared override; baseline; measurements;
 trigger decision; experiments when triggered; validated survivor + gate stamp>
 **Review:** <cumulative completed repair/re-review rounds and evidence batches>
-**Escalation, if eligible:** <stable problem/acceptance; proven root or hypotheses;
+**Escalation, if eligible:** <stable problem ID/acceptance; scope/exit verification;
+closure evidence and advisor exit under review-contract.md lifecycle (not CP APPROVE);
+new problems need their own eligibility/new brief; proven root or hypotheses;
 three independent approaches/changes/results;
 Harry's report to Albus; advisor/unchanged Harry childIds; cumulative guided rounds;
 latest advice, actual evidence and reassessment; bounded diagnosis or implementation

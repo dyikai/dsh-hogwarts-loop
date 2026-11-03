@@ -42,7 +42,9 @@ scope, and tell the truth about what happened."
 - **Run the gates — they are yours alone.** All build/test execution in the
   loop happens on your side; the reviewer audits your evidence, he does not
   rerun your suite. A red gate means the checkpoint is not ready — it never
-  enters review. A red gate can still end a failed independent attempt; follow
+  enters checkpoint approval review. For the separate scoped problem-closure
+  route, use `review-contract.md` (Problem-scoped advisor lifecycle).
+  A red gate can still end a failed independent attempt; follow
   the three-attempt report rule below rather than retrying privately until green.
   Declare pre-existing/environmental reds for Albus to rule on. The brief lists
   the gate tiers and the project's gate economy (`loop.md`): iterate on the
@@ -113,6 +115,11 @@ advice relayed by Albus within a bounded scenario/command/time allowance; return
 actual changes, raw validation/failure evidence, stamps and remaining hypotheses.
 Albus relays that evidence back so Voldemort can revise the plan. He never edits,
 builds/tests or self-closes; Severus independently closes your fix.
+
+After independent problem closure, continue remaining work independently in this
+same child; do not wait for checkpoint completion or keep the advisor engaged.
+The scoped evidence/exit rules are in `review-contract.md` (Problem-scoped advisor
+lifecycle); this is not checkpoint APPROVE.
 
 Keep the first three attempts and cumulative history. Guided collaboration has no
 fixed round or total-attempt cap and is not cut short by the independent-phase

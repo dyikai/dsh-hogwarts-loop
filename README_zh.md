@@ -135,6 +135,8 @@ Albus 带上验收标准、三次改动及失败、已排除项和当前假设�
 
 持续协作直到问题解决，**没有固定协作轮数或总尝试上限**。保留前三次及累计历史；Albus 每轮重评，安排有界的诊断**或**实施：依据实际证据提出新／修正假设或诊断问题，指定命令、时间／场景界限和可判定信号。诊断无需先改代码，由 Harry 执行并经 Albus 回传只读顾问；验证现有证据、确认缺陷后才能授权修复。[评审契约](skill/references/review-contract.md)允许该已合法升级问题的指导工作（含纯诊断轮次）超过累计 repair／evidence 数，不因固定次数截停或再次要求人类扩额。未升级的普通 checkpoint 和无关问题仍受原预算约束；不得盲重跑、换标签凑轮或在单批内藏无限重试。范围和必要审批不变；遵守人类停止要求，诚实报告真实权限、环境或外部前置条件阻塞。
 
+**指导止于当前问题的独立关闭，不等待整个 checkpoint 完成。** Albus 记录局部证据／退出并立即停派顾问，Harry 独立继续剩余工作。同一个 V 子会话保留记忆但无常驻任务；不同问题须自身三次失败、Albus 重新授权范围／退出标准及新简报。[单问题顾问生命周期](skill/references/review-contract.md#problem-scoped-advisor-lifecycle)规定目标验证与无关 red 的归因要求：局部关闭不是 checkpoint APPROVE，更不能据此提交红色 checkpoint。
+
 [skill/SKILL.md](skill/SKILL.md) 的 *Escalation* 是流程规则，[index.js](index.js) 的 `DEFAULT_ROLES` 定义角色。这些是 **agent 工作契约，不是运行时 ACL 或自动计数器**。Harry/Voldemort 续接会重发当前 persona，旧子角色也一样，不替换 child 或创建时模型；冻结的旧 persona 只用于识别历史身份。
 
 > 表单写入的是 **profile 的该插件条目**（`cordis.patch.yml` 里的 `hogwarts-loop` 行）。想手工改或批量改也可以直接写那行的 `config`，字段定义见 `index.js` 里导出的 `Config`。
