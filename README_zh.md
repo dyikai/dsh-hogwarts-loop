@@ -32,12 +32,13 @@ hogwarts_dispatch({ role: "harry", description: "CP2 build", prompt: "…下一�
 
 返回结果区分 `started` 和 `continued`：创建时报告所用 provider/model，继续时返回已有 childId，不声称已经套用新默认模型。`cwd` 仅用于首次创建；后续调用携带非空 `cwd` 会被拒绝，请省略它以保留子代理已有的工作目录。列表标签保留首次 `description`，后续简报不会重新命名子代理。
 
-## 条件式消融
+## 强制消融
 
-技能要求 Harry 每次交付都报告复杂度；触发[消融规则](skill/references/ablation.md)后，
-先实际删除或替换设计单元做对照实验，不降低原验收标准，再验证组合后的最终版本，
-交给 Severus 审查证据。这是流程门禁，不是运行时自动扫描代码体量；直接手工派发会
-跳过技能的 checkpoint 纪律。阈值与计量口径只在上述规则中维护。
+每个 checkpoint，无论体量、复杂度或是否改动运行时代码，都须在 approval review 前
+实际删除或更简单替换设计单元，完成至少一次有界对照实验。Harry 保持验收不变，验证
+最终组合版本并提供证据；Albus 检查就绪，Severus 只读审查。
+[消融规则](skill/references/ablation.md)集中规定修复增量补测、未变树证据复用及显式
+人类特许的边界。这是流程门禁，不是运行时强制机制；直接手工派发跳过技能的 checkpoint 纪律。
 
 ## 审查纪律
 

@@ -32,14 +32,15 @@ Bindings survive plugin reload and resuming the same parent session. A continuat
 
 Results distinguish `started` from `continued`. Creation reports the configured provider/model; continuation identifies the existing child rather than claiming it uses newly edited defaults. `cwd` is creation-only: a non-empty `cwd` on a later call is rejected. Omit it to preserve the child's established working directory. The roster label keeps the first `description`; later briefs do not relabel the child.
 
-## Conditional ablation
+## Mandatory ablation
 
-The skill requires a complexity report on every Harry delivery. When the
-[ablation policy](skill/references/ablation.md) triggers, Harry runs controlled
-removal/substitution experiments without weakening acceptance, verifies the
-combined survivor, and gives Severus the evidence to audit. This is a workflow
-gate, not a runtime code-size scanner; direct manual dispatch skips the skill's
-checkpoint discipline. Thresholds and counting rules have one canonical home.
+Every checkpoint, including tiny and non-code changes, requires an actual bounded
+deletion or simpler-substitution experiment before approval review. Harry keeps
+acceptance unchanged, verifies the combined survivor and supplies the evidence;
+Albus checks readiness and Severus audits read-only. The canonical
+[ablation policy](skill/references/ablation.md) also covers repair updates,
+unchanged-tree evidence reuse and explicit human waivers. This is a workflow gate,
+not runtime enforcement; direct manual dispatch skips the skill's checkpoint discipline.
 
 ## Review discipline
 

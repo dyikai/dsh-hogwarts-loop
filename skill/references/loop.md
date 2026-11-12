@@ -55,8 +55,9 @@ loosely-run loop leaks.
 A checkpoint exits (edge → APPROVE) only when Severus approves, the approval gate
 in `review-contract.md` is satisfied, **and** the full gate is green on the exact
 state being committed (see Gate economy below).
-Before review, every delivery must also satisfy the conditional complexity and
-ablation gate in `ablation.md`; missing required experiments are not review-ready.
+Before checkpoint approval review, every delivery must satisfy mandatory ablation
+in `ablation.md`, including tiny/non-code work and repairs. Missing required
+experiments are not review-ready; unchanged-tree evidence reuse follows that policy.
 
 `review-contract.md` owns validation, closure and budgets. Albus validates candidates
 between D and E; Harry executes probes and repairs. Count a repair round only
@@ -73,7 +74,7 @@ between roles.
 ### A — orchestrator → Harry: *implementer brief*
 - Checkpoint scope (this checkpoint's deliverables only).
 - Exact spec section references (the standard to build to).
-- Gate commands (the done-condition), measurement baseline and `ablation.md` policy.
+- Gate commands (the done-condition), baseline and mandatory ablation scope under `ablation.md`.
 - Hard constraints (frozen surfaces, layering/dependency rules, etc.).
 - **Carried memos**: constraints Severus flagged in earlier checkpoints that this
   one must honor.
@@ -85,8 +86,8 @@ Full template in `implementer.md`.
   with the tree state they ran on.
 - Every deviation: ID + what changed + why.
 - Files changed / added.
-- Complexity measurements and trigger ruling; when triggered, experiment artifacts,
-  keep/revert decisions and combined-survivor evidence (`ablation.md`).
+- Mandatory ablation evidence: candidate, unchanged acceptance, hypotheses, variant
+  patches/stamps/raw results, decisions and combined-survivor gates (`ablation.md`).
 - Self-flagged risk spots ("review this hardest").
 - Temporary-artifact inventory: exact paths owned by this run, for Albus's cleanup.
 - Confirmation: not committed, stayed in scope.
@@ -97,7 +98,7 @@ Full template in `implementer.md`.
   it cannot yield checkpoint APPROVE.
 - How to see the diff + the baseline commit (only the unpassed changes).
 - Spec sections to check against.
-- Harry's declared deviation list (for rulings) and complexity/ablation evidence.
+- Harry's declared deviation list (for rulings) and mandatory ablation evidence (`ablation.md`).
 - The current repair-round/evidence counts, and any
   reassessment decision in force.
 - Material security changes or missing coverage, plus any applicable risk/approval
@@ -140,7 +141,8 @@ batch, not an unconfirmed repair. Preserve the evidence count across repair roun
   include unchanged-test red/green evidence when a repro was required.
 - For an evidence-only request: results on the reviewed snapshot, including failures
   to settle the question. Albus validates these before authorizing repair.
-- Complexity/ablation delta, unresolved items and task-owned temporary paths.
+- Updated or validly reused ablation evidence under `ablation.md`, unresolved items
+  and task-owned temporary paths.
 
 A fix report proposes closure; it never self-closes. Send repairs back through C
 for independent re-review and count the completed round then. Evidence-only results

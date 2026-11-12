@@ -65,7 +65,10 @@ isolated; the deepest reviews land on CP3 and CP6 by design.
 This is the single clearest case for why Severus must not be the author. It is a
 teaching reconstruction under the current contract, not a transcript of the
 historical run; where the old run used a reviewer-written repro, the text says
-so instead of presenting it as current practice.
+so instead of presenting it as current practice. Under this contract, both the
+initial delivery and the one-line repair below must satisfy mandatory ablation
+in `ablation.md` before approval review; the repair updates affected experiments.
+This example does not claim historical experiment results.
 
 **CP5 delivered a long-press recognizer.** Harry's report: feature built, unit
 tests green, gates pass. The unit tests fired a 500 ms timer via a `MockClock`,

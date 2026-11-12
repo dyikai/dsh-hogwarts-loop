@@ -133,14 +133,14 @@ fix→re-review rounds. The working plan supplements their memory and bootstraps
 new cast only when work moves to a genuinely new parent session; its storage
 (durable repo doc vs session/temp) does not change the role binding.
 
-### Simplify large deliveries before review
+### Mandatory ablation before every checkpoint review
 
-Harry measures every delivery and fix report against the conditional gate in
-**`references/ablation.md`**. When triggered, he runs controlled deletion or
-substitution experiments before the final gate; acceptance must not weaken.
-Albus rejects missing evidence, and Severus audits the experiments with the code.
-A successful review is not a substitute for this check. Load the reference when
-planning gates, preparing a delivery, or auditing its complexity report.
+Every checkpoint requires an actual bounded deletion or simpler-substitution
+experiment under **`references/ablation.md`**, regardless of size or artifact type.
+Harry preserves acceptance, reports the experiment evidence and gates the final
+survivor. Repairs update affected experiments; unchanged-tree evidence reuse follows
+that policy. Albus checks readiness and Severus audits read-only. A successful
+review is not a substitute. Load the reference when planning, delivering or auditing.
 
 ### Escalation: Voldemort
 

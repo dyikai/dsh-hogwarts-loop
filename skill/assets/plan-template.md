@@ -15,8 +15,9 @@
 > Cast: <parent; persistent Harry/Severus childIds; specialists only when used>
 >
 > Rules: `references/review-contract.md` (validation, closure and budgets),
-> `references/ablation.md` (complexity gate), `references/loop.md` (cleanup).
-> Omit inapplicable sections; this is not a mandatory signoff checklist.
+> `references/ablation.md` (mandatory ablation), `references/loop.md` (cleanup).
+> Omit only inapplicable optional sections; mandatory ablation cannot be omitted.
+> This is not an additional signoff checklist.
 
 ## Checkpoint map
 
@@ -34,8 +35,11 @@
 **Carried memos:** <constraints that affect this CP>
 **Gate:** fast <commands/assertions>; full <commands/assertions>
 **Acceptance:** <top-level requirements this CP satisfies>
-**Ablation:** <default policy or predeclared override; baseline; measurements;
-trigger decision; experiments when triggered; validated survivor + gate stamp>
+**Mandatory ablation:** <baseline + green candidate; unchanged acceptance; bounded
+hypotheses; actual deletion/substitution variants + patches/stamps/raw results;
+keep/revert/unresolved reasons; validated survivor + final gates; repair updates or
+valid unchanged-tree evidence reuse under ablation.md; attributed human waiver only
+if explicitly obtained, never self-declared N/A>
 **Review:** <cumulative completed repair/re-review rounds and evidence batches>
 **Escalation, if eligible:** <stable problem ID/acceptance; scope/exit verification;
 closure evidence and advisor exit under review-contract.md lifecycle (not CP APPROVE);

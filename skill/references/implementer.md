@@ -58,10 +58,11 @@ scope, and tell the truth about what happened."
   collect evidence before an unconfirmed repair, retain the unchanged repro's
   red/green results when execution is needed, and report unresolved proof honestly.
   Albus tracks the budgets; the independent reviewer closes findings.
-- **Measure and ablate before delivery.** Follow `ablation.md` for every delivery
-  and fix report. Report the trigger decision; when triggered, perform controlled
-  removals/substitutions, retain unchanged acceptance, and gate the combined
-  survivor before handing it to Severus. Do not equate fewer lines with success.
+- **Complete mandatory ablation before delivery.** Follow `ablation.md` for every
+  checkpoint, including tiny and non-code work. Actually remove/substitute a design
+  unit, preserve acceptance, report evidence and gate the combined survivor before
+  review. Update affected experiments for repairs; reuse valid unchanged-tree
+  evidence only under that policy. Do not equate fewer lines with success.
 - **Declare every deviation.** Any departure from the spec — a signature that
   couldn't be exactly as written, a doc recipe that doesn't compile, a field that
   had to move — gets logged with an ID, what changed, and *why*. The reviewer
@@ -158,7 +159,7 @@ see `loop.md` for how it flows):
 
 1. What was delivered (per the brief's checklist).
 2. Full gate results (the commands, their real output, and the tree-state stamp
-   they ran on).
+   they ran on), plus mandatory ablation evidence under `ablation.md`.
 3. Every deviation, each with ID + what + why.
 4. Files changed / added.
 5. Points to review hardest (self-flagged risk spots).
@@ -173,7 +174,8 @@ each finding's fix was (by stable ID, with a **proposed** disposition — not a
 self-closed one), the pre-fix red and post-fix green repro evidence with both
 stamps where execution applied, the reran gate (per the gate economy — the fast
 tier on slow-build stacks; the one final full gate lands before commit), the
-new regression tests, and any unresolved evidence question.
+new regression tests, and any unresolved evidence question. Update or validly reuse
+ablation evidence under `ablation.md`; even a tiny repair must cover affected hypotheses.
 Only an independent re-review closes a finding. A refuted finding is not
 repaired; a P2 waiver is not yours to grant; a P3 is carried, not auto-fixed.
 
@@ -206,15 +208,15 @@ the repo's convention.
   Harry still implements/tests in this child, with bounded validation each round.
 
 ## When done
-1. Measure complexity using `ablation.md` against <baseline>; if triggered,
-   run the controlled experiments and combine only accepted simplifications.
+1. Complete mandatory ablation under `ablation.md` against <baseline>, preserving
+   acceptance; combine only accepted simplifications and retain experiment evidence.
 2. Run the gate on the survivor — fast tier while iterating: <commands>; full
    tier per gate economy (<cheap | expensive>): <commands>, with a tree stamp.
 3. Update the working plan in its chosen storage (session/temp by default; a
    user-approved durable doc is the exception): tick this CP's items, set status
-   in-progress, log any deviations and the complexity/experiment evidence with
+   in-progress, log any deviations and mandatory ablation evidence with
    reasons. Do not commit the working plan.
-4. Report back: delivery, final gates, trigger decision and experiment evidence,
+4. Report back: delivery, final gates, mandatory ablation evidence,
    every deviation, changed files, and the spots Severus should review hardest.
 
 Do NOT commit (the orchestrator commits after review passes). Do NOT exceed

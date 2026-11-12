@@ -56,7 +56,8 @@ Check a demonstrated class of bug within the checkpoint; route out-of-scope
 instances explicitly instead of silently expanding the work.
 
 Checkpoint approval requires accounted-for candidates, independent closure of fixes and the
-full gate on the final tree. Confirmed P1s must be fixed, never waived; P2s must be
+full gate on the final tree, plus the mandatory ablation readiness in `ablation.md`.
+Confirmed P1s must be fixed, never waived; P2s must be
 fixed or explicitly waived by an authorized decision-maker with scope and reason.
 Required verification must be completed or explicitly risk-accepted as above;
 that cannot waive a confirmed P1 or a mandatory human approval. Carry P3s rather

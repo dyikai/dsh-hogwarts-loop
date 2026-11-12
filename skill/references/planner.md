@@ -36,11 +36,10 @@ commit discipline are the rest.
   collapse into one; on a slow-build stack (Xcode, big monorepos) the placement
   of full-gate runs is a real budget decision, and unaffordable suites (UI/e2e)
   get pulled into an explicit milestone gate.
-- **Plan the conditional ablation gate** (`ablation.md`). Record the checkpoint
-  baseline and default thresholds, or justify project-specific thresholds before
-  implementation. Every Harry report includes measurements; triggered work needs
-  experiments and a validated survivor before review. Preserve the last validated
-  ablation baseline across subthreshold repair reports.
+- **Plan mandatory ablation for every checkpoint** (`ablation.md`), including tiny
+  and non-code work. Record the baseline, unchanged acceptance and bounded experiment
+  scope. Require experiment evidence and a validated survivor before review; apply
+  the same policy's repair-update and unchanged-tree evidence-reuse rules.
 - **Plan material risk, not a signoff checklist.** Name changed security properties
   and any missing review coverage (`reviewer.md`). Record evidence/owner/stop and
   rollback or human approvals only where the actual risk or applicable policy

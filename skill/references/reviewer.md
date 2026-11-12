@@ -47,11 +47,11 @@ unrelated work. Unclear attribution or required red verification prevents closur
   suite, do not spin up simulators. Rerunning a green suite on an unchanged
   tree verifies the reporter, not the code, and every build a reviewer starts
   is cost the loop already paid once.
-- **Audit necessity as well as correctness.** Apply `ablation.md` to Harry's
-  complexity report: check thresholds, meaningful deletion experiments, unchanged
-  acceptance, rejected-variant restoration and the combined survivor's evidence.
-  Missing required evidence is P2, not an optional cleanup memo. Do not execute
-  experiments yourself; request the missing proof from Harry.
+- **Audit mandatory ablation as well as correctness.** Apply `ablation.md` to every
+  checkpoint: audit meaningful deletion/substitution experiments, unchanged
+  acceptance, rejected-variant restoration, repair coverage or valid evidence reuse,
+  and the combined survivor's evidence. Missing required evidence is P2, not an
+  optional cleanup memo. Do not execute experiments; request missing proof from Harry.
 - **Probe adversarially — walk the paths tests don't cover.** This is where real
   bugs are found. Ask: what input breaks this? The idle path (nothing happens for
   a while)? The empty case? The reentrant call (a callback that re-enters the
