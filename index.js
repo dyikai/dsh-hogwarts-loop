@@ -1120,7 +1120,9 @@ export function createDispatcher(ctx, config) {
           activation = await ctx.subagents.startActivation({
             provider: delegation.provider,
             label,
-            request,
+            // DSH 0.2.2-rc.2 introduced named agents and flattened the start spec.
+            // Pick the shape before starting: a failed call may have published a child.
+            ...(typeof ctx.subagents.namesOf === 'function' ? request : { request }),
             signal,
             delivery: 'parent',
           })

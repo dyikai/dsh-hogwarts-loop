@@ -63,7 +63,9 @@ class ProjectionHost {
 }
 
 class FakeSubagents {
-  constructor() {
+  constructor({ flatActivation = true } = {}) {
+    this.flatActivation = flatActivation
+    if (flatActivation) this.namesOf = () => assert.fail('dispatch does not need to look up agent names')
     this.providers = {
       spawn: {
         name: 'spawn',
@@ -98,16 +100,22 @@ class FakeSubagents {
     this.startCalls.push(spec)
     const childId = spec.childId ?? `child-${this.nextId++}`
     if (this.beforePublish !== null) await this.beforePublish(spec, childId)
-    spec.request.parent.session.append('subagent/catalog', {
-      version: 0,
+    const { parent, prompt } = this.flatActivation ? spec : spec.request
+    assert.ok(parent?.session, 'activation must supply its parent at the runtime’s expected level')
+    assert.ok(Array.isArray(prompt), 'activation must supply its prompt at the runtime’s expected level')
+    const name = `agent-${this.nextId - 1}`
+    parent.session.append('subagent/catalog', {
+      version: this.flatActivation ? 3 : 0,
       childId,
       childCreatedAt: Date.now(),
       mode: 'continuable',
       label: spec.label,
+      ...(this.flatActivation ? { name } : {}),
     })
     if (this.afterPublish !== null) await this.afterPublish(spec, childId)
     return {
       childId,
+      ...(this.flatActivation ? { name } : {}),
       messageId: `message-${childId}`,
       result: Promise.resolve({ output: [], stopReason: 'completed' }),
       dispose: async () => {},
@@ -288,9 +296,10 @@ test('sequential checkpoints continue the same child and never start a second on
   const { ctx, subagents } = makeCtx()
   const dispatch = createDispatcher(ctx, makeConfig())
 
+  const exec = makeExec(parent)
   const first = await dispatch.execute(
     { role: 'harry', description: 'CP1 build', prompt: 'build checkpoint 1' },
-    makeExec(parent),
+    exec,
   )
   assert.equal(first.action, 'started')
   assert.equal(first.provider, 'deepseek-official')
@@ -300,9 +309,12 @@ test('sequential checkpoints continue the same child and never start a second on
   assert.match(subagents.startCalls[0].label, /^hogwarts:harry · CP1 build$/)
   assert.equal(subagents.startCalls[0].provider, 'spawn')
   assert.equal(subagents.startCalls[0].delivery, 'parent')
-  assert.equal(subagents.startCalls[0].request.maxDepth, 1)
-  assert.equal(subagents.startCalls[0].request.agentOptions.model, 'deepseek-flash')
-  const firstPrompt = textOfContent(subagents.startCalls[0].request.prompt)
+  assert.equal(subagents.startCalls[0].parent, exec.agent)
+  assert.equal(subagents.startCalls[0].signal, exec.signal)
+  assert.equal(subagents.startCalls[0].maxDepth, 1)
+  assert.deepEqual(subagents.startCalls[0].agentOptions, { provider: 'deepseek-official', model: 'deepseek-flash' })
+  assert.equal(Object.hasOwn(subagents.startCalls[0], 'request'), false)
+  const firstPrompt = textOfContent(subagents.startCalls[0].prompt)
   assert.match(firstPrompt, /^You are Harry/)
   assert.match(firstPrompt, /smallest complete solution for current requirements/)
   assert.match(firstPrompt, /existing deviation mechanism/)
@@ -332,6 +344,31 @@ test('sequential checkpoints continue the same child and never start a second on
   assert.equal(subagents.startCalls.length, 1)
 })
 
+test('DSH 0.2.2-rc.1 starts with a nested request and continues the same child', async () => {
+  const exec = makeExec(new FakeSession('parent-rc1'))
+  const { ctx, subagents } = makeCtx({ subagents: new FakeSubagents({ flatActivation: false }) })
+  const dispatch = createDispatcher(ctx, makeConfig())
+  const first = await dispatch.execute({ role: 'harry', cwd: '/repo', prompt: 'first' }, exec)
+  assert.equal(first.action, 'started')
+  assert.deepEqual(subagents.startCalls[0], {
+    provider: 'spawn',
+    label: 'hogwarts:harry · implementer',
+    request: {
+      parent: exec.agent,
+      prompt: [{ type: 'text', text: composePrompt(DEFAULT_ROLES.harry.persona, 'first') }],
+      agentOptions: { provider: 'deepseek-official', model: 'deepseek-flash' },
+      cwd: '/repo',
+      maxDepth: 1,
+    },
+    signal: exec.signal,
+    delivery: 'parent',
+  })
+  const second = await dispatch.execute({ role: 'harry', prompt: 'second' }, exec)
+  assert.deepEqual(second, { role: 'harry', action: 'continued', childId: first.childId })
+  assert.equal(subagents.startCalls.length, 1)
+  assert.equal(subagents.sendCalls[0].childId, first.childId)
+})
+
 // These check actual transport payloads, not whether an agent follows the contract.
 for (const role of ['harry', 'voldemort']) {
   test(`${role} receives its current contract at creation and after plugin reload`, async () => {
@@ -341,7 +378,7 @@ for (const role of ['harry', 'voldemort']) {
     const first = await createDispatcher(firstCtx.ctx, makeConfig()).execute(
       { role, prompt: 'first task' }, makeExec(parent),
     )
-    assert.equal(textOfContent(subagents.startCalls[0].request.prompt),
+    assert.equal(textOfContent(subagents.startCalls[0].prompt),
       composePrompt(DEFAULT_ROLES[role].persona, 'first task'))
     const reloaded = await import('../index.js?advisor-contract-reload')
     const nextCtx = makeCtx({ subagents })
@@ -674,7 +711,7 @@ test('cwd is creation-only; a continuation rejects retargeting instead of silent
     makeExec(parent),
   )
   assert.equal(first.action, 'started')
-  assert.equal(subagents.startCalls[0].request.cwd, '/repo')
+  assert.equal(subagents.startCalls[0].cwd, '/repo')
 
   await assert.rejects(
     dispatch.execute({ role: 'harry', cwd: '/elsewhere', prompt: 'second' }, makeExec(parent)),
